@@ -6,7 +6,7 @@ Download any YouTube playlist in two clicks. No installation knowledge needed.
 
 ## First time only
 
-Double-click **`setup.bat`**
+Double-click **`SETUP.vbs`**
 
 It downloads everything automatically. Takes about a minute.
 
@@ -14,7 +14,7 @@ It downloads everything automatically. Takes about a minute.
 
 ## Every time you want to download
 
-Double-click **`start.bat`**
+Double-click **`START.vbs`**
 
 It will ask you:
 1. The YouTube playlist link
