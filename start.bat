@@ -1,3 +1,2 @@
 @echo off
-python "%~dp0download_playlist.py"
-pause
+powershell -ExecutionPolicy Bypass -File "%~dp0start.ps1"
