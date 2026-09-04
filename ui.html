@@ -87,20 +87,26 @@
   }
   .row { display: flex; gap: 10px; align-items: center; }
   .row > input { flex: 1; }
-  .choices { display: grid; gap: 9px; margin-top: 4px; }
-  .choice {
-    display: flex;
-    gap: 11px;
-    align-items: flex-start;
+  .settings {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .formats { display: flex; gap: 8px; flex-wrap: wrap; }
+  .formats label {
+    flex: 1 1 auto;
+    margin: 0;
     border: 1px solid var(--line);
     border-radius: 9px;
-    padding: 12px 14px;
+    padding: 10px 13px;
     cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
   }
-  .choice:hover { border-color: var(--dim); }
-  .choice input { margin: 3px 0 0; accent-color: var(--accent); }
-  .choice b { font-weight: 550; display: block; }
-  .choice small { color: var(--dim); }
+  .formats label:hover { border-color: var(--dim); }
+  .formats input { accent-color: var(--accent); margin-right: 7px; }
+  .formats small { display: block; color: var(--dim); font-weight: 400; font-size: 12.5px; padding-left: 21px; }
   .found {
     display: flex;
     justify-content: space-between;
@@ -129,6 +135,7 @@
   }
   .now { font-weight: 550; }
   .meta { color: var(--dim); font-size: 13px; display: flex; gap: 16px; }
+  .where { color: var(--dim); font-size: 12.5px; margin-top: 14px; word-break: break-all; }
   .log {
     margin-top: 18px;
     padding-top: 16px;
@@ -138,7 +145,7 @@
     font-size: 13.5px;
   }
   .log div { padding: 3px 0; color: var(--dim); }
-  .log div::before { content: "✓ "; color: var(--ok); }
+  .log div::before { content: "\2713 "; color: var(--ok); }
   .err { color: var(--bad); font-size: 13.5px; margin-top: 12px; }
   .end { display: flex; gap: 10px; margin-top: 18px; }
   [hidden] { display: none !important; }
@@ -152,61 +159,43 @@
     <label for="url">YouTube link</label>
     <div class="row">
       <input type="text" id="url" placeholder="https://www.youtube.com/playlist?list=..." spellcheck="false">
-      <button id="check">Check</button>
+      <button id="go">Download</button>
     </div>
-    <p class="hint" id="link-hint">Paste a playlist or video link anywhere on this page.</p>
-    <p class="hint">This page does the downloading itself. If IDM pops up and grabs the
-      video instead, turn off its browser integration for YouTube, or the file lands
-      in IDM rather than the folder you pick here.</p>
+    <p class="hint" id="link-hint">Paste a link anywhere on this page and it starts downloading.</p>
     <p class="err" id="link-err" hidden></p>
-  </section>
 
-  <section class="card" id="s-options" hidden>
-    <div class="found">
-      <b id="pl-title"></b>
-      <span id="pl-count"></span>
-    </div>
+    <div class="settings">
+      <label>Format</label>
+      <div class="formats">
+        <label><input type="radio" name="fmt" value="best" checked>Video
+          <small>Best quality</small></label>
+        <label><input type="radio" name="fmt" value="1080">Video 1080p
+          <small>Smaller files</small></label>
+        <label><input type="radio" name="fmt" value="mp3">Music
+          <small>MP3 with cover art</small></label>
+      </div>
 
-    <label for="folder">Save to</label>
-    <input type="text" id="folder" spellcheck="false">
-    <p class="hint">The folder is created if it doesn't exist.</p>
+      <div style="height:16px"></div>
 
-    <div style="height:18px"></div>
-
-    <label>Format</label>
-    <div class="choices">
-      <label class="choice">
-        <input type="radio" name="fmt" value="best" checked>
-        <span><b>Video, best quality</b><small>Highest resolution available. Bigger files.</small></span>
-      </label>
-      <label class="choice">
-        <input type="radio" name="fmt" value="1080">
-        <span><b>Video, up to 1080p</b><small>Plenty for most screens, much smaller.</small></span>
-      </label>
-      <label class="choice">
-        <input type="radio" name="fmt" value="mp3">
-        <span><b>Music only, MP3</b><small>Audio with cover art and track titles.</small></span>
-      </label>
-    </div>
-
-    <div class="end">
-      <button id="start">Start download</button>
-      <button class="quiet" id="back">Back</button>
+      <label for="folder">Save to</label>
+      <input type="text" id="folder" spellcheck="false" placeholder="Downloads, in a folder named after the playlist">
+      <p class="hint">Leave empty for that. Both settings are remembered.</p>
     </div>
   </section>
 
   <section class="card" id="s-run" hidden>
     <div class="found">
-      <b id="run-title"></b>
+      <b id="run-title">Reading the link...</b>
       <span id="run-count"></span>
     </div>
-    <div class="now" id="now">Starting...</div>
+    <div class="now">Starting...</div>
     <div class="bar"><i id="fill"></i></div>
     <div class="meta">
       <span id="pct"></span>
       <span id="speed"></span>
       <span id="eta"></span>
     </div>
+    <div class="where" id="run-where"></div>
     <div class="log" id="log"></div>
     <div class="end">
       <button class="quiet" id="stop">Stop</button>
@@ -225,21 +214,10 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const show = (...on) => ['s-link','s-options','s-run','s-done']
+const show = (...on) => ['s-link','s-run','s-done']
   .forEach(s => $(s).hidden = !on.includes(s));
 
-let info = null, folder = '', timer = null, barMax = 0;
-
-// Pasting anywhere on the first screen starts the check, so nobody has to
-// hunt for the field or go via the address bar.
-document.addEventListener('paste', e => {
-  if ($('s-link').hidden) return;
-  const text = ((e.clipboardData || window.clipboardData).getData('text') || '').trim();
-  if (!text) return;
-  e.preventDefault();
-  $('url').value = text;
-  $('check').click();
-});
+let total = 1, folder = '', timer = null, barMax = 0, busy = false;
 
 async function api(path, body) {
   const opt = body ? {method:'POST', body: JSON.stringify(body)} : {};
@@ -248,61 +226,80 @@ async function api(path, body) {
   return r.json();
 }
 
+// Remember the format and folder between runs.
+const store = {
+  get(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const savedFmt = store.get('fmt', 'best');
+const savedDir = store.get('dir', '');
+const fmtInput = document.querySelector('input[name=fmt][value="' + savedFmt + '"]');
+if (fmtInput) fmtInput.checked = true;
+$('folder').value = savedDir;
+
 api('/api/defaults').then(d => {
   if (d.clipboard) {
     $('url').value = d.clipboard;
-    $('link-hint').textContent = 'Taken from your clipboard. Press Check, or paste a different link.';
+    $('link-hint').textContent = 'Link taken from your clipboard. Press Download, or paste another.';
   }
 }).catch(() => {});
 
-$('check').onclick = async () => {
+// Paste anywhere and it goes, no clicking into the box first.
+document.addEventListener('paste', e => {
+  if ($('s-link').hidden) return;
+  const text = ((e.clipboardData || window.clipboardData).getData('text') || '').trim();
+  if (!text) return;
+  e.preventDefault();
+  $('url').value = text;
+  start();
+});
+
+$('go').onclick = start;
+$('url').onkeydown = e => { if (e.key === 'Enter') start(); };
+
+async function start() {
   const url = $('url').value.trim();
-  $('link-err').hidden = true;
-  if (!url) return;
-  $('check').disabled = true;
-  $('check').textContent = 'Checking...';
-  try {
-    info = await api('/api/info', {url});
-    $('pl-title').textContent = info.title;
-    $('pl-count').textContent = info.count > 1 ? info.count + ' videos' : 'single video';
-    $('folder').value = info.suggested;
-    show('s-options');
-  } catch (e) {
-    $('link-err').textContent = String(e.message || e);
-    $('link-err').hidden = false;
-  }
-  $('check').disabled = false;
-  $('check').textContent = 'Check';
-};
-
-$('url').onkeydown = e => { if (e.key === 'Enter') $('check').click(); };
-$('back').onclick = () => show('s-link');
-
-$('start').onclick = async () => {
-  folder = $('folder').value.trim();
-  const format = document.querySelector('input[name=fmt]:checked').value;
-  $('start').disabled = true;
+  if (!url || busy) return;
+  busy = true;
   barMax = 0;
+  $('link-err').hidden = true;
+  $('go').disabled = true;
+
+  const format = document.querySelector('input[name=fmt]:checked').value;
+  const wanted = $('folder').value.trim();
+  store.set('fmt', format);
+  store.set('dir', wanted);
+
+  $('run-title').textContent = 'Reading the link...';
+  $('run-count').textContent = '';
+  $('run-where').textContent = '';
+  $('log').innerHTML = '';
+  $('fill').style.width = '0';
+  show('s-run');
+
   try {
-    await api('/api/start', {url: info.url, folder, format});
+    const info = await api('/api/info', {url});
+    total  = info.count || 1;
+    folder = wanted || info.suggested;
     $('run-title').textContent = info.title;
-    $('run-count').textContent = info.count > 1 ? info.count + ' videos' : 'single video';
-    $('log').innerHTML = '';
-    show('s-run');
+    $('run-count').textContent = total > 1 ? total + ' videos' : 'single video';
+    $('run-where').textContent = folder;
+
+    await api('/api/start', {url: info.url, folder, format});
     timer = setInterval(poll, 700);
   } catch (e) {
     $('link-err').textContent = String(e.message || e);
     $('link-err').hidden = false;
     show('s-link');
   }
-  $('start').disabled = false;
-};
+  busy = false;
+  $('go').disabled = false;
+}
 
 function poll() {
   api('/api/progress').then(p => {
-    const total = info.count || 1;
     const done = p.done.length;
-    $('now').textContent = p.title || 'Working...';
+    document.querySelector('.now').textContent = p.title || 'Working...';
     $('pct').textContent = p.percent || '';
     $('speed').textContent = p.speed || '';
     $('eta').textContent = p.eta && p.eta !== 'NA' ? 'ETA ' + p.eta : '';
@@ -343,7 +340,7 @@ $('stop').onclick = async () => {
 };
 
 $('open').onclick = () => api('/api/open', {folder});
-$('again').onclick = () => { show('s-link'); $('url').select(); };
+$('again').onclick = () => { show('s-link'); $('url').value = ''; $('url').focus(); };
 </script>
 </body>
 </html>

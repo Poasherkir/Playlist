@@ -11,20 +11,22 @@ About page: **https://playlist-downloader-eight.vercel.app**
 
 1. **Copy the playlist link** from your browser's address bar.
 2. **Double-click `Download Playlist.bat`.** A black window opens, and a page
-   opens in your browser with the link already filled in.
-3. **Choose a folder and format, press Start.**
+   opens in your browser.
+3. **Paste the link. It starts downloading.**
 
 That's the whole thing. The first run needs a few extra minutes to fetch its
 tools; after that it goes straight to the page.
 
 ## Using it
 
-If the link wasn't on your clipboard, paste it anywhere on the page. You don't
-have to click into the box first. It then shows the playlist name and how many
-videos, and suggests a folder in Downloads named after the playlist.
+Paste anywhere on the page and it begins. You don't have to click into the box
+first, and there is nothing to confirm. If the link was already on your
+clipboard when the page opened, it's filled in and you can press Download.
 
-Three formats: video at best quality, video capped at 1080p for smaller files,
-or music only as MP3.
+Format and folder sit on that same screen, and both are remembered for next
+time. Three formats: video at best quality, video capped at 1080p for smaller
+files, or music only as MP3. Leave the folder empty and each playlist gets its
+own folder in Downloads, named after the playlist.
 
 While it runs you get a progress bar, the current video's name, speed and time
 left, and a list ticking off as each one finishes. **Open folder** at the end
