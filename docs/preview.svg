@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="286" viewBox="0 0 720 286" role="img" aria-label="The downloader page mid-playlist: Lo-fi beats to study to, 34 videos, 62.4 percent done at 4.11 MiB per second.">
+  <style>
+    .t { font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+    .head { font-size: 15px; font-weight: 600; fill: #f4f4f5; }
+    .dim  { font-size: 13px; fill: #a1a1aa; }
+    .cur  { font-size: 14.5px; font-weight: 500; fill: #f4f4f5; }
+    .done { font-size: 13px; fill: #a1a1aa; }
+    .tick { font-size: 13px; fill: #4ade80; }
+    .brand{ font-size: 14px; font-weight: 650; fill: #f4f4f5; }
+    .accent { fill: #e23a3a; }
+  </style>
+
+  <rect width="720" height="286" rx="14" fill="#18181b"/>
+
+  <text x="28" y="38" class="t brand">Playlist <tspan class="accent">Downloader</tspan></text>
+
+  <rect x="24" y="56" width="672" height="206" rx="12" fill="#232327" stroke="#35353a"/>
+
+  <text x="46" y="88" class="t head">Lo-fi beats to study to</text>
+  <text x="674" y="88" class="t dim" text-anchor="end">34 videos</text>
+  <line x1="46" y1="104" x2="674" y2="104" stroke="#35353a"/>
+
+  <text x="46" y="130" class="t cur">08 — Rainy Window, Slow Tape</text>
+
+  <rect x="46" y="144" width="628" height="8" rx="4" fill="#35353a"/>
+  <rect x="46" y="144" width="392" height="8" rx="4" fill="#e23a3a"/>
+
+  <text x="46"  y="174" class="t dim">62.4%</text>
+  <text x="112" y="174" class="t dim">4.11MiB/s</text>
+  <text x="196" y="174" class="t dim">ETA 00:47</text>
+
+  <line x1="46" y1="192" x2="674" y2="192" stroke="#35353a"/>
+
+  <text x="46" y="214" class="t tick">✓</text>
+  <text x="62" y="214" class="t done">05 — Midnight Study Loop</text>
+  <text x="46" y="234" class="t tick">✓</text>
+  <text x="62" y="234" class="t done">06 — Coffee Shop, 2am</text>
+  <text x="46" y="254" class="t tick">✓</text>
+  <text x="62" y="254" class="t done">07 — Paper Lanterns</text>
+</svg>
