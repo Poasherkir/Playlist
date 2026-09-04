@@ -1,5 +1,4 @@
 bin/
 .git/
-*.ps1
-*.bat
-ui.html
+/*.ps1
+/ui.html

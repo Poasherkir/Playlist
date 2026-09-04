@@ -9,13 +9,18 @@ About page: **https://playlist-downloader-eight.vercel.app**
 
 ## Get started
 
-1. **Copy the playlist link** from your browser's address bar.
-2. **Double-click `Download Playlist.bat`.** A black window opens, and a page
-   opens in your browser.
-3. **Paste the link. It starts downloading.**
+1. **Get the file.** One button on
+   [the site](https://playlist-downloader-eight.vercel.app), or clone this repo.
+2. **Double-click `Download Playlist.bat`.** A black window opens, and the
+   downloader opens in your browser.
+3. **Paste the playlist link. It starts downloading.**
 
 That's the whole thing. The first run needs a few extra minutes to fetch its
 tools; after that it goes straight to the page.
+
+The file works on its own, so the one from the site is all you need. Run it and
+it pulls down the rest beside itself. Next to a cloned repo it just runs what is
+already there.
 
 ## Using it
 
@@ -94,10 +99,10 @@ interface instead of a console.
 
 | | |
 |---|---|
-| `Download Playlist.bat` | What you double-click. |
+| `Download Playlist.bat` | What you double-click. Fetches the rest if it is on its own. |
 | `playlist.ps1` | Serves the page and drives yt-dlp. |
 | `ui.html` | The page itself. |
-| `site/` | The public page, deployed to Vercel. |
+| `site/` | The public page, deployed to Vercel, plus a copy of the launcher it hands out. |
 | `bin/` | Tools, fetched on first run. Safe to delete. |
 
 Built on [yt-dlp](https://github.com/yt-dlp/yt-dlp) and
