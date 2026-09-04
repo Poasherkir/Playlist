@@ -10,7 +10,9 @@ About page: **https://playlist-downloader-eight.vercel.app**
 ## Get started
 
 1. **Get the file.** One button on
-   [the site](https://playlist-downloader-eight.vercel.app), or clone this repo.
+   [the site](https://playlist-downloader-eight.vercel.app), or from
+   [the latest release](https://github.com/Poasherkir/Playlist/releases/latest),
+   or clone this repo.
 2. **Double-click `Download Playlist.bat`.** A black window opens, and the
    downloader opens in your browser.
 3. **Paste the playlist link. It starts downloading.**
