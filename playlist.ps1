@@ -280,7 +280,9 @@ try {
                     $last  = $lines | Where-Object { $_.StartsWith('DL|') } | Select-Object -Last 1
                     $percent = ''; $speed = ''; $eta = ''; $title = ''
                     if ($last) {
-                        $parts   = $last.Split('|')
+                        # Split on the first four bars only. Plenty of video
+                        # titles contain one, and it would cut them short.
+                        $parts   = $last.Split([string[]]@('|'), 5, [StringSplitOptions]::None)
                         $percent = $parts[1].Trim()
                         $speed   = $parts[2].Trim()
                         $eta     = $parts[3].Trim()
