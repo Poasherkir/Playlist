@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playlist Downloader</title>
+<meta name="description" content="Download a whole YouTube playlist as MP4 or MP3 on Windows. Free, no install, no ads.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f7f7f8;
+    --ink: #17171a;
+    --dim: #6b6b76;
+    --line: #e5e5e9;
+    --accent: #c81e1e;
+    --code: #f1f1f3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131316;
+      --panel: #1c1c20;
+      --ink: #f2f2f4;
+      --dim: #9d9da8;
+      --line: #2e2e35;
+      --accent: #ef4444;
+      --code: #232329;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 90px 0 70px; text-align: center; }
+  h1 {
+    font-size: clamp(34px, 6vw, 52px);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    font-weight: 680;
+    margin: 0 0 18px;
+  }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lede { font-size: clamp(17px, 2.4vw, 20px); color: var(--dim); margin: 0 auto 34px; max-width: 30em; }
+  .cta { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  a.btn {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 560;
+    padding: 13px 26px;
+    border-radius: 9px;
+  }
+  a.btn:hover { filter: brightness(1.1); }
+  a.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .note { color: var(--dim); font-size: 14px; margin-top: 16px; }
+
+  .shot {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+    margin: 0 0 70px;
+  }
+  .shot .titlebar { display: flex; gap: 7px; margin-bottom: 18px; }
+  .shot .titlebar i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); display: block; }
+  .shot .head { display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--line); padding-bottom: 13px; margin-bottom: 15px; }
+  .shot .head b { font-weight: 600; }
+  .shot .head span { color: var(--dim); font-size: 13px; }
+  .shot .cur { font-weight: 550; font-size: 15px; }
+  .shot .bar { height: 8px; background: var(--line); border-radius: 99px; margin: 13px 0 9px; overflow: hidden; }
+  .shot .bar i { display: block; height: 100%; width: 62%; background: var(--accent); border-radius: 99px; }
+  .shot .meta { color: var(--dim); font-size: 13px; display: flex; gap: 17px; }
+  .shot ul { list-style: none; padding: 15px 0 0; margin: 15px 0 0; border-top: 1px solid var(--line);
+    color: var(--dim); font-size: 14px; }
+  .shot li { padding: 3px 0; }
+  .shot li::before { content: "✓ "; color: #16a34a; }
+
+  h2 { font-size: 21px; letter-spacing: -0.01em; margin: 0 0 20px; }
+  section { padding-bottom: 66px; }
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; }
+  ol.steps li {
+    counter-increment: s;
+    position: relative;
+    padding: 0 0 20px 46px;
+  }
+  ol.steps li::before {
+    content: counter(s);
+    position: absolute; left: 0; top: 1px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    display: grid; place-items: center;
+    font-size: 14px; font-weight: 600;
+  }
+  ol.steps b { font-weight: 570; }
+  ol.steps p { margin: 3px 0 0; color: var(--dim); font-size: 15px; }
+  code { background: var(--code); padding: 2px 6px; border-radius: 5px; font-size: 0.9em; }
+  .facts { border-top: 1px solid var(--line); }
+  .facts dl { margin: 0; }
+  .facts dt { font-weight: 570; margin: 22px 0 3px; }
+  .facts dd { margin: 0; color: var(--dim); }
+  footer { border-top: 1px solid var(--line); padding: 26px 0 50px; color: var(--dim); font-size: 14px; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Download a whole <em>YouTube playlist</em></h1>
+    <p class="lede">Every video as MP4, or the whole thing as MP3s with cover art.
+      One file to double-click. No install, no account, no ads.</p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/Poasherkir/Playlist">Get it on GitHub</a>
+      <a class="btn ghost" href="https://github.com/Poasherkir/Playlist#how-to-use-it">Read the guide</a>
+    </div>
+    <p class="note">Windows 10 and 11. Free and open source.</p>
+  </header>
+
+  <div class="shot" aria-hidden="true">
+    <div class="titlebar"><i></i><i></i><i></i></div>
+    <div class="head"><b>Lo-fi beats to study to</b><span>34 videos</span></div>
+    <div class="cur">08 — Rainy Window, Slow Tape</div>
+    <div class="bar"><i></i></div>
+    <div class="meta"><span>62.4%</span><span>4.11MiB/s</span><span>ETA 00:47</span></div>
+    <ul>
+      <li>05 — Midnight Study Loop</li>
+      <li>06 — Coffee Shop, 2am</li>
+      <li>07 — Paper Lanterns</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><b>Copy the playlist link</b>
+        <p>Straight from your browser's address bar. The usual
+          <code>watch?v=…&amp;list=…</code> link works — you get the whole playlist,
+          not just the one video.</p></li>
+      <li><b>Double-click <code>Download Playlist.bat</code></b>
+        <p>A page opens in your browser with the link already filled in.
+          First run takes a few minutes while it fetches its tools.</p></li>
+      <li><b>Pick a folder and format, press Start</b>
+        <p>Watch the progress, then click through to the folder. Stop whenever
+          you like — next time it picks up where it left off.</p></li>
+    </ol>
+  </section>
+
+  <section class="facts">
+    <h2>Worth knowing</h2>
+    <dl>
+      <dt>It runs on your computer, not on this site</dt>
+      <dd>YouTube blocks downloads coming from data centres, and a server has
+        neither the disk nor the time for a playlist of videos. Running it on your
+        own machine sidesteps both, and your files never touch anyone else's
+        computer.</dd>
+
+      <dt>Nothing is installed</dt>
+      <dd>The tools it needs land in a <code>bin</code> folder next to the script.
+        Nothing touches your PATH or your registry. Delete the folder and it is
+        gone without trace.</dd>
+
+      <dt>It picks up where it stopped</dt>
+      <dd>Close it mid-playlist, come back tomorrow, choose the same folder, and it
+        skips what you already have. Videos that fail get retried next run.</dd>
+
+      <dt>Files stay in order</dt>
+      <dd>Named <code>001 - Title.mp4</code> and so on, so your player keeps the
+        playlist order. MP3s carry the thumbnail as cover art and proper titles.</dd>
+    </dl>
+  </section>
+
+  <footer>
+    <p>Free software, built on <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a>
+      and <a href="https://ffmpeg.org">ffmpeg</a>.
+      <a href="https://github.com/Poasherkir/Playlist">Source on GitHub</a>.</p>
+    <p>Download only what you have the right to download.</p>
+  </footer>
+
+</div>
+</body>
+</html>

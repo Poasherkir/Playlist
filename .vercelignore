@@ -1,0 +1,5 @@
+bin/
+.git/
+*.ps1
+*.bat
+ui.html
