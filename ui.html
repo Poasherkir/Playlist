@@ -147,6 +147,7 @@
   .log div { padding: 3px 0; color: var(--dim); }
   .log div::before { content: "\2713 "; color: var(--ok); }
   .err { color: var(--bad); font-size: 13.5px; margin-top: 12px; }
+  .why { font-size: 13.5px; margin: 8px 0 0; }
   .end { display: flex; gap: 10px; margin-top: 18px; }
   [hidden] { display: none !important; }
 </style>
@@ -204,6 +205,7 @@
 
   <section class="card" id="s-done" hidden>
     <b id="done-msg"></b>
+    <p class="why" id="done-why" hidden></p>
     <p class="hint" id="done-where"></p>
     <div class="end">
       <button id="open">Open folder</button>
@@ -296,6 +298,30 @@ async function start() {
   $('go').disabled = false;
 }
 
+// yt-dlp's own words, tidied up. The common ones get a plain reason and
+// something to do about it; anything else is passed through as it came.
+function explain(problem) {
+  if (!problem) return 'Some videos could not be fetched. Running it again retries them.';
+  const raw = problem.replace(/^ERROR:\s*/, '').replace(/^\[[^\]]+\]\s*/, '').replace(/^[\w-]{11}:\s*/, '');
+  // Specific causes first. "This video is unavailable" is also how YouTube
+  // opens a geo-block, so the general case has to come last.
+  // "Sign in to confirm" opens both the bot check and the age check, so this
+  // one has to look for the bot specifically.
+  if (/not a bot/i.test(raw))
+    return 'YouTube asked to confirm you are not a bot. Those videos need a signed-in account.';
+  if (/private video/i.test(raw))                    return 'Some videos are private.';
+  if (/members-only|join this channel/i.test(raw))   return 'Some videos are for channel members only.';
+  if (/not available in your country|geo.?restrict|geo.?block/i.test(raw))
+    return 'Some videos are blocked in your country.';
+  if (/age.?restrict|confirm your age|inappropriate for some users/i.test(raw))
+    return 'Some videos are age-restricted and need a signed-in account.';
+  if (/unavailable|removed|has been deleted|terminated/i.test(raw))
+    return 'Some videos have been taken down.';
+  if (/unable to download|timed out|connection|network is unreachable/i.test(raw))
+    return 'The connection dropped. Running it again picks up where it stopped.';
+  return raw;
+}
+
 function poll() {
   api('/api/progress').then(p => {
     const done = p.done.length;
@@ -322,10 +348,12 @@ function poll() {
       const failed = total - done;
       $('done-msg').textContent =
         done === 0 && p.exitCode === 0 ? 'Nothing new. These are already in that folder.'
-        : done === 0                   ? 'Nothing downloaded. The videos may be private or region-locked.'
+        : done === 0                   ? 'Nothing downloaded.'
         : failed > 0                   ? done + ' of ' + total + ' downloaded, ' + failed + ' skipped.'
         :                                'All done. ' + done + (done > 1 ? ' files.' : ' file.');
       $('done-where').textContent = folder;
+      $('done-why').textContent = failed > 0 ? explain(p.problem) : '';
+      $('done-why').hidden = failed === 0;
       show('s-done');
     }
   }).catch(() => {});

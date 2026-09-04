@@ -288,6 +288,9 @@ try {
                         $eta     = $parts[3].Trim()
                         $title   = $parts[4]
                     }
+                    # yt-dlp explains itself on stderr. Worth passing on, rather
+                    # than leaving the page to guess why something was skipped.
+                    $problems = @(Read-Log $errLog | Where-Object { $_ -match '^ERROR:' })
                     $finished = ($null -eq $job -or $job.HasExited)
                     Send-Json $context @{
                         done     = $done
@@ -297,6 +300,7 @@ try {
                         title    = $title
                         finished = $finished
                         exitCode = if ($finished -and $job) { $job.ExitCode } else { -1 }
+                        problem  = if ($problems.Count) { $problems[-1] } else { '' }
                     }
                 }
 

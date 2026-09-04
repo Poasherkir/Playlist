@@ -106,4 +106,5 @@ interface instead of a console.
 | `bin/` | Tools, fetched on first run. Safe to delete. |
 
 Built on [yt-dlp](https://github.com/yt-dlp/yt-dlp) and
-[ffmpeg](https://ffmpeg.org). Download only what you have the right to download.
+[ffmpeg](https://ffmpeg.org), and released under the [MIT licence](LICENSE).
+Download only what you have the right to download.
