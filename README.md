@@ -19,7 +19,7 @@ tools; after that it goes straight to the page.
 
 ## Using it
 
-If the link wasn't on your clipboard, paste it anywhere on the page — you don't
+If the link wasn't on your clipboard, paste it anywhere on the page. You don't
 have to click into the box first. It then shows the playlist name and how many
 videos, and suggests a folder in Downloads named after the playlist.
 
@@ -39,7 +39,7 @@ address printed in that window.
 - **You can stop it any time.** Press Stop, or close the black window. Come back
   later, pick the same folder, and it carries on where it left off. Finished
   videos are recorded in `already-downloaded.txt` in that folder, which is how it
-  knows what to skip — delete that file to download everything again.
+  knows what to skip. Delete that file to download everything again.
 - Videos that fail (deleted, private, region-locked) are skipped rather than
   stopping the run, and retried next time.
 - Files are numbered `001 - Title.mp4` so they keep playlist order.
@@ -56,11 +56,11 @@ address printed in that window.
 
 **A download manager grabs the video instead.** IDM and similar tools hook into
 your browser and take anything that looks like a media file. This downloader
-runs outside the browser, so they cannot see its downloads — but they will grab
+runs outside the browser, so they cannot see its downloads. They will still grab
 the video if a YouTube page opens in the browser itself, which is what happens
-when the link goes into the address bar. Paste it on the downloader's page
-instead. To stop IDM doing it at all: IDM → Options → General → switch off
-integration for your browser.
+when the link goes into the address bar, so paste it on the downloader's page
+instead. To stop IDM doing it at all, open IDM, go to Options, then General, and
+switch off integration for your browser.
 
 **Downloads fail or stall.** Nearly always yt-dlp being out of date after a
 change on YouTube's side. It updates itself weekly; to force it now, delete the
@@ -70,7 +70,7 @@ change on YouTube's side. It updates itself weekly; to force it now, delete the
 here gets around it.
 
 **The page doesn't open.** The black window prints the address, normally
-`http://localhost:8730/` — open it by hand. If that port is busy the script
+`http://localhost:8730/`. Open it by hand. If that port is busy the script
 moves up until it finds a free one, so the number may differ.
 
 ## Why the website doesn't do the downloading
@@ -81,8 +81,8 @@ neither could any hosted version:
 - YouTube blocks datacenter IPs. Requests from Vercel, AWS and the like get the
   bot check almost immediately, while the same request from a home connection is
   fine.
-- Serverless functions time out after 10–60 seconds and have no disk. A playlist
-  is minutes of work and gigabytes of files.
+- Serverless functions time out after 10 to 60 seconds and have no disk. A
+  playlist is minutes of work and gigabytes of files.
 - It would be against YouTube's terms and most hosts' acceptable use policies.
 
 Running it on your own machine avoids all three, and you still get a real

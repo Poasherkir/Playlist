@@ -20,7 +20,7 @@
   <text x="674" y="88" class="t dim" text-anchor="end">34 videos</text>
   <line x1="46" y1="104" x2="674" y2="104" stroke="#35353a"/>
 
-  <text x="46" y="130" class="t cur">08 — Rainy Window, Slow Tape</text>
+  <text x="46" y="130" class="t cur">008 - Rainy Window, Slow Tape</text>
 
   <rect x="46" y="144" width="628" height="8" rx="4" fill="#35353a"/>
   <rect x="46" y="144" width="392" height="8" rx="4" fill="#e23a3a"/>
@@ -32,9 +32,9 @@
   <line x1="46" y1="192" x2="674" y2="192" stroke="#35353a"/>
 
   <text x="46" y="214" class="t tick">✓</text>
-  <text x="62" y="214" class="t done">05 — Midnight Study Loop</text>
+  <text x="62" y="214" class="t done">005 - Midnight Study Loop</text>
   <text x="46" y="234" class="t tick">✓</text>
-  <text x="62" y="234" class="t done">06 — Coffee Shop, 2am</text>
+  <text x="62" y="234" class="t done">006 - Coffee Shop, 2am</text>
   <text x="46" y="254" class="t tick">✓</text>
-  <text x="62" y="254" class="t done">07 — Paper Lanterns</text>
+  <text x="62" y="254" class="t done">007 - Paper Lanterns</text>
 </svg>
