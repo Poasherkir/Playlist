@@ -4,13 +4,14 @@
 
 $ErrorActionPreference = 'Stop'
 
-$bin    = Join-Path $PSScriptRoot 'bin'
-$ytdlp  = Join-Path $bin 'yt-dlp.exe'
-$ffmpeg = Join-Path $bin 'ffmpeg.exe'
-$deno   = Join-Path $bin 'deno.exe'
-$page   = Join-Path $PSScriptRoot 'ui.html'
-$outLog = Join-Path $bin 'run.out'
-$errLog = Join-Path $bin 'run.err'
+$bin     = Join-Path $PSScriptRoot 'bin'
+$ytdlp   = Join-Path $bin 'yt-dlp.exe'
+$ffmpeg  = Join-Path $bin 'ffmpeg.exe'
+$ffprobe = Join-Path $bin 'ffprobe.exe'
+$deno    = Join-Path $bin 'deno.exe'
+$page    = Join-Path $PSScriptRoot 'ui.html'
+$outLog  = Join-Path $bin 'run.out'
+$errLog  = Join-Path $bin 'run.err'
 
 $ytdlpUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe'
 $denoUrl  = 'https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip'
@@ -19,9 +20,16 @@ $ffmpegUrls = @(
     'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip'
 )
 
+# Into a side file first, so a download cut short never leaves a broken
+# tool behind that the next run takes as installed.
 function Fetch($url, $dest) {
-    & curl.exe -L --fail --progress-bar -o $dest $url
-    if ($LASTEXITCODE -ne 0) { throw "Download failed: $url" }
+    $part = "$dest.part"
+    & curl.exe -L --fail --progress-bar -o $part $url
+    if ($LASTEXITCODE -ne 0) {
+        Remove-Item $part -Force -ErrorAction SilentlyContinue
+        throw "Download failed: $url"
+    }
+    Move-Item $part $dest -Force
 }
 
 function Install-FromZip($urls, $wanted, $label) {
@@ -50,9 +58,23 @@ function Get-JsRuntime {
     return @()
 }
 
+# YouTube sends picture and sound as two streams, and yt-dlp joins them
+# with ffmpeg. If ffmpeg will not start, yt-dlp does not stop: it hands
+# back the two halves as separate files and marks the video as done. So
+# check that ffmpeg actually runs, not just that the file is there.
+function Test-Ffmpeg {
+    foreach ($exe in $ffmpeg, $ffprobe) {
+        if (-not (Test-Path $exe)) { return $false }
+        try { & $exe -version | Out-Null } catch { return $false }
+        if ($LASTEXITCODE -ne 0) { return $false }
+    }
+    return $true
+}
+
 function Install-Tools {
-    $needsJs = (Get-JsRuntime).Count -eq 0
-    if ((Test-Path $ytdlp) -and (Test-Path $ffmpeg) -and -not $needsJs) { return }
+    $needsJs  = (Get-JsRuntime).Count -eq 0
+    $ffmpegOk = Test-Ffmpeg
+    if ((Test-Path $ytdlp) -and $ffmpegOk -and -not $needsJs) { return }
 
     Write-Host '  First run, so it has to fetch its tools. This takes a few minutes.'
     Write-Host '  They go in the bin folder next to this script and stay there.'
@@ -63,10 +85,13 @@ function Install-Tools {
         Write-Host '  yt-dlp'
         Fetch $ytdlpUrl $ytdlp
     }
-    if (-not (Test-Path $ffmpeg)) {
+    if (-not $ffmpegOk) {
         Write-Host '  ffmpeg'
         Install-FromZip $ffmpegUrls @('ffmpeg.exe', 'ffprobe.exe') 'ffmpeg'
-        if (-not (Test-Path $ffmpeg)) { throw 'ffmpeg did not unpack properly. Delete the bin folder and try again.' }
+        if (-not (Test-Ffmpeg)) {
+            throw ('ffmpeg will not run, and without it picture and sound would come out as two separate files. ' +
+                   'Check your antivirus has not blocked bin\ffmpeg.exe, then delete the bin folder and try again.')
+        }
     }
     if ($needsJs) {
         Write-Host '  deno'
@@ -152,7 +177,13 @@ try {
 
     Install-Tools
     Update-Ytdlp
-    $js = Get-JsRuntime
+
+    # yt-dlp writes in the local code page when its output goes to a pipe or
+    # a file, and quietly drops whatever does not fit. An Arabic or Japanese
+    # title came back blank, which could also make a playlist pass for a
+    # single video.
+    try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
+    $common = @(Get-JsRuntime) + @('--encoding', 'utf-8')
 
     $listener = New-Object System.Net.HttpListener
     $port = 0
@@ -173,8 +204,9 @@ try {
     Write-Host ''
     Start-Process $address
 
-    $job   = $null
-    $total = 0
+    $job        = $null
+    $total      = 0
+    $unfinished = $null
 
     while ($listener.IsListening) {
         $context = $listener.GetContext()
@@ -195,7 +227,7 @@ try {
 
                 '/api/info' {
                     $url = (Get-Body $context).url
-                    $titles = @(& $ytdlp @js --flat-playlist --ignore-errors --no-warnings --print '%(playlist_title)s' -- $url)
+                    $titles = @(& $ytdlp @common --flat-playlist --ignore-errors --no-warnings --print '%(playlist_title)s' -- $url)
                     if ($titles.Count -eq 0) {
                         Send-Error $context 'That link did not work. Make sure it is a public YouTube video or playlist.'
                         break
@@ -205,7 +237,7 @@ try {
                         $name  = $titles[0]
                         $total = $titles.Count
                     } else {
-                        $single = @(& $ytdlp @js --no-warnings --print '%(title)s' --skip-download -- $url)
+                        $single = @(& $ytdlp @common --no-warnings --print '%(title)s' --skip-download -- $url)
                         $name   = if ($single.Count) { $single[0] } else { 'Video' }
                         $total  = 1
                     }
@@ -224,6 +256,14 @@ try {
                     New-Item -ItemType Directory -Force -Path $folder | Out-Null
                     $folder = (Resolve-Path $folder).Path
                     Remove-Item $outLog, $errLog -Force -ErrorAction SilentlyContinue
+
+                    # The two streams are fetched and joined in a hidden folder,
+                    # and only the finished video is moved out into the user's.
+                    # A video cut short waits in there to be resumed next time
+                    # instead of lying around as a picture-only file.
+                    $unfinished = Join-Path $folder '.incomplete'
+                    $dir = New-Item -ItemType Directory -Force -Path $unfinished
+                    try { $dir.Attributes = $dir.Attributes -bor [IO.FileAttributes]::Hidden } catch { }
 
                     switch ($body.format) {
                         'mp3' {
@@ -246,6 +286,7 @@ try {
 
                     $options = @(
                         '--paths', $folder,
+                        '--paths', "temp:$unfinished",
                         '-o', $template,
                         '--ffmpeg-location', $bin,
                         '--download-archive', (Join-Path $folder 'already-downloaded.txt'),
@@ -257,7 +298,11 @@ try {
                         '--windows-filenames',
                         '--newline',
                         '--progress',
-                        '--progress-template', 'download:DL|%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s|%(info.title)s',
+                        '--progress-template', 'download:DL|%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s',
+                        # The title gets a line of its own because the progress
+                        # line ignores --encoding, and any letter the Windows
+                        # code page lacks would vanish from it.
+                        '--print', 'before_dl:NOW|%(title)s',
                         '--print', 'after_move:DONE|%(title)s'
                     )
                     # A link copied off a playlist page names a video as well as
@@ -265,7 +310,7 @@ try {
                     if ($body.url -match '[?&]list=') { $options += '--yes-playlist' }
 
                     $job = Start-Process -FilePath $ytdlp `
-                        -ArgumentList (Format-CommandLine ($js + $options + $format + @('--', $body.url))) `
+                        -ArgumentList (Format-CommandLine ($common + $options + $format + @('--', $body.url))) `
                         -NoNewWindow -PassThru `
                         -RedirectStandardOutput $outLog -RedirectStandardError $errLog
                     # Touching Handle makes .NET hold on to it, otherwise
@@ -277,21 +322,23 @@ try {
                 '/api/progress' {
                     $lines = Read-Log $outLog
                     $done  = @($lines | Where-Object { $_.StartsWith('DONE|') } | ForEach-Object { $_.Substring(5) })
+                    $now   = $lines | Where-Object { $_.StartsWith('NOW|') } | Select-Object -Last 1
                     $last  = $lines | Where-Object { $_.StartsWith('DL|') } | Select-Object -Last 1
-                    $percent = ''; $speed = ''; $eta = ''; $title = ''
+                    $percent = ''; $speed = ''; $eta = ''
+                    $title = if ($now) { $now.Substring(4) } else { '' }
                     if ($last) {
-                        # Split on the first four bars only. Plenty of video
-                        # titles contain one, and it would cut them short.
-                        $parts   = $last.Split([string[]]@('|'), 5, [StringSplitOptions]::None)
+                        $parts   = $last.Split('|')
                         $percent = $parts[1].Trim()
                         $speed   = $parts[2].Trim()
                         $eta     = $parts[3].Trim()
-                        $title   = $parts[4]
                     }
                     # yt-dlp explains itself on stderr. Worth passing on, rather
                     # than leaving the page to guess why something was skipped.
                     $problems = @(Read-Log $errLog | Where-Object { $_ -match '^ERROR:' })
                     $finished = ($null -eq $job -or $job.HasExited)
+                    if ($finished -and $unfinished -and (Test-Path $unfinished) -and -not (Get-ChildItem $unfinished -Force)) {
+                        Remove-Item $unfinished -Force -ErrorAction SilentlyContinue
+                    }
                     Send-Json $context @{
                         done     = $done
                         percent  = $percent
@@ -305,7 +352,9 @@ try {
                 }
 
                 '/api/stop' {
-                    if ($job -and -not $job.HasExited) { Stop-Process -Id $job.Id -Force -ErrorAction SilentlyContinue }
+                    # /T takes ffmpeg down too if it is halfway through joining
+                    # a video, so nothing is left holding files open.
+                    if ($job -and -not $job.HasExited) { & taskkill.exe /PID $job.Id /T /F | Out-Null }
                     Send-Json $context @{ ok = $true }
                 }
 

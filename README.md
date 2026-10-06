@@ -51,6 +51,10 @@ address printed in that window.
   knows what to skip. Delete that file to download everything again.
 - Videos that fail (deleted, private, region-locked) are skipped rather than
   stopping the run, and retried next time.
+- Every video arrives as one MP4 with picture and sound together. YouTube
+  sends the two separately, so they are fetched and joined in a hidden
+  `.incomplete` folder, and only the finished file is put in yours. Anything
+  cut short waits in there to be resumed.
 - Files are numbered `001 - Title.mp4` so they keep playlist order.
 - MP3s carry the thumbnail as cover art and proper track titles.
 - A `watch?v=...&list=...` link downloads the whole playlist, not just the one
@@ -70,6 +74,21 @@ the video if a YouTube page opens in the browser itself, which is what happens
 when the link goes into the address bar, so paste it on the downloader's page
 instead. To stop IDM doing it at all, open IDM, go to Options, then General, and
 switch off integration for your browser.
+
+You don't need IDM to get picture and sound in one file. YouTube sends them as
+two streams to everyone, IDM included. IDM joins them behind the scenes, and
+so does this.
+
+**Older downloads came out as two files, picture in one and sound in the
+other.** Earlier versions did that when ffmpeg failed to start. Delete those
+pieces (names like `001 - Title.f137.mp4` and `001 - Title.f140.m4a`) and
+`already-downloaded.txt`, then run it again on the same folder. Videos that are
+already whole are recognised and skipped, and the rest come down as one file
+each.
+
+**"ffmpeg will not run".** It is checked at every start, because without it
+picture and sound cannot be joined. This is usually antivirus holding back
+`bin\ffmpeg.exe`. Allow it, delete the `bin` folder and run again.
 
 **Downloads fail or stall.** Nearly always yt-dlp being out of date after a
 change on YouTube's side. It updates itself weekly; to force it now, delete the
