@@ -38,7 +38,7 @@
     font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
     display: flex;
     justify-content: center;
-    padding: 40px 20px 60px;
+    padding: 40px 16px 60px;
   }
   main { width: 100%; max-width: 620px; }
   h1 {
@@ -86,7 +86,7 @@
     border: 1px solid var(--line);
   }
   .row { display: flex; gap: 10px; align-items: center; }
-  .row > input { flex: 1; }
+  .row > input { flex: 1; min-width: 0; }
   .settings {
     margin-top: 20px;
     padding-top: 18px;
@@ -94,7 +94,7 @@
   }
   .formats { display: flex; gap: 8px; flex-wrap: wrap; }
   .formats label {
-    flex: 1 1 auto;
+    flex: 1 1 160px;
     margin: 0;
     border: 1px solid var(--line);
     border-radius: 9px;
@@ -102,11 +102,23 @@
     cursor: pointer;
     font-weight: 500;
     font-size: 14px;
-    white-space: nowrap;
   }
   .formats label:hover { border-color: var(--dim); }
   .formats input { accent-color: var(--accent); margin-right: 7px; }
   .formats small { display: block; color: var(--dim); font-weight: 400; font-size: 12.5px; padding-left: 21px; }
+  .countdown {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 10px 10px 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--bg);
+    font-size: 14px;
+  }
+  .countdown button { padding: 7px 14px; }
   .found {
     display: flex;
     justify-content: space-between;
@@ -116,14 +128,15 @@
     margin-bottom: 18px;
     border-bottom: 1px solid var(--line);
   }
-  .found b { font-weight: 600; }
+  .found b { font-weight: 600; overflow-wrap: anywhere; }
   .found span { color: var(--dim); font-size: 13px; white-space: nowrap; }
+  .overall { color: var(--dim); font-size: 13.5px; }
   .bar {
     height: 8px;
     background: var(--line);
     border-radius: 99px;
     overflow: hidden;
-    margin: 14px 0 10px;
+    margin: 10px 0 14px;
   }
   .bar > i {
     display: block;
@@ -133,28 +146,70 @@
     border-radius: 99px;
     transition: width .3s ease;
   }
-  .now { font-weight: 550; }
-  .meta { color: var(--dim); font-size: 13px; display: flex; gap: 16px; }
-  .where { color: var(--dim); font-size: 12.5px; margin-top: 14px; word-break: break-all; }
-  .log {
+  .now { font-weight: 550; overflow-wrap: anywhere; }
+  .now .state {
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-right: 8px;
+  }
+  .meta { color: var(--dim); font-size: 13px; display: flex; gap: 16px; min-height: 1.5em; }
+  .where { color: var(--dim); font-size: 12.5px; margin-top: 10px; word-break: break-all; }
+  .notice {
+    font-size: 13.5px;
+    margin: 14px 0 0;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+  }
+  .items {
+    position: relative;
     margin-top: 18px;
-    padding-top: 16px;
+    padding-top: 12px;
     border-top: 1px solid var(--line);
-    max-height: 210px;
+    max-height: 250px;
     overflow-y: auto;
     font-size: 13.5px;
   }
-  .log div { padding: 3px 0; color: var(--dim); }
-  .log div::before { content: "\2713 "; color: var(--ok); }
-  .err { color: var(--bad); font-size: 13.5px; margin-top: 12px; }
-  .why { font-size: 13.5px; margin: 8px 0 0; }
-  .end { display: flex; gap: 10px; margin-top: 18px; }
+  .it { display: flex; align-items: baseline; gap: 10px; padding: 3px 0; color: var(--dim); }
+  .it .n { font-variant-numeric: tabular-nums; min-width: 2.2em; }
+  .it .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip {
+    font-size: 11.5px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    white-space: nowrap;
+  }
+  .s-downloading, .s-joining, .s-converting { color: var(--ink); font-weight: 550; }
+  .s-downloading .chip, .s-joining .chip, .s-converting .chip { color: var(--accent); border-color: currentColor; font-weight: 500; }
+  .s-done .chip { color: var(--ok); border-color: currentColor; }
+  .s-failed .chip { color: var(--bad); border-color: currentColor; }
+  .fails { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; max-height: 250px; overflow-y: auto; }
+  .fails b { color: var(--bad); font-weight: 600; }
+  .fails div { padding: 4px 0; }
+  .fails .why { display: block; color: var(--dim); font-size: 13px; }
+  .err { color: var(--bad); font-size: 13.5px; margin-top: 12px; white-space: pre-line; }
+  .msg { display: block; margin-bottom: 4px; }
+  .say { font-size: 13.5px; margin: 12px 0 0; }
+  .end { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .gone { border-color: var(--bad); }
+  footer { color: var(--dim); font-size: 12.5px; text-align: center; margin-top: 28px; line-height: 1.8; }
+  footer a { color: var(--accent); font-weight: 550; }
   [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <main>
   <h1>Playlist <span>Downloader</span></h1>
+
+  <section class="card gone" id="s-gone" hidden>
+    <b>The downloader window was closed.</b>
+    <p class="hint">Double-click <b>Download Playlist.bat</b> to start it again. Anything finished is saved.</p>
+  </section>
 
   <section class="card" id="s-link">
     <label for="url">YouTube link</label>
@@ -163,15 +218,19 @@
       <button id="go">Download</button>
     </div>
     <p class="hint" id="link-hint">Paste a link anywhere on this page and it starts downloading.</p>
+    <div class="countdown" id="countdown" hidden>
+      <span id="cd-text"></span>
+      <button class="quiet" id="cd-cancel">Cancel</button>
+    </div>
     <p class="err" id="link-err" hidden></p>
 
     <div class="settings">
       <label>Format</label>
       <div class="formats">
-        <label><input type="radio" name="fmt" value="best" checked>Video
-          <small>Best quality</small></label>
-        <label><input type="radio" name="fmt" value="1080">Video 1080p
-          <small>Smaller files</small></label>
+        <label><input type="radio" name="fmt" value="mp4" checked>Video
+          <small>MP4 that plays on any PC, up to 1080p</small></label>
+        <label><input type="radio" name="fmt" value="max">Video, best quality
+          <small>Up to 4K. Windows 10 may need the AV1 add-on</small></label>
         <label><input type="radio" name="fmt" value="mp3">Music
           <small>MP3 with cover art</small></label>
       </div>
@@ -186,43 +245,60 @@
 
   <section class="card" id="s-run" hidden>
     <div class="found">
-      <b id="run-title">Reading the link...</b>
+      <b id="run-title"></b>
       <span id="run-count"></span>
     </div>
-    <div class="now">Starting...</div>
+    <div class="overall" id="overall"></div>
     <div class="bar"><i id="fill"></i></div>
+    <div class="now"><span class="state" id="now-state"></span><span id="now-title"></span></div>
     <div class="meta">
       <span id="pct"></span>
       <span id="speed"></span>
       <span id="eta"></span>
     </div>
     <div class="where" id="run-where"></div>
-    <div class="log" id="log"></div>
+    <p class="notice" id="run-notice" hidden></p>
+    <div class="items" id="items"></div>
+    <p class="hint" id="queue" hidden></p>
     <div class="end">
       <button class="quiet" id="stop">Stop</button>
+      <button class="quiet" id="run-open">Open folder</button>
     </div>
   </section>
 
-  <section class="card" id="s-done" hidden>
-    <b id="done-msg"></b>
-    <p class="why" id="done-why" hidden></p>
-    <p class="hint" id="done-where"></p>
-    <div class="end">
-      <button id="open">Open folder</button>
-      <button class="quiet" id="again">Download another</button>
-    </div>
-  </section>
+  <div id="finished"></div>
+
+  <footer>
+    <div id="versions"></div>
+    <div>Drag <a id="bm" href="#">Download playlist</a> to your bookmarks bar, then click it on any
+      YouTube page while the downloader window is open.</div>
+  </footer>
 </main>
 
 <script>
 const $ = id => document.getElementById(id);
-const show = (...on) => ['s-link','s-run','s-done']
-  .forEach(s => $(s).hidden = !on.includes(s));
+const esc = s => String(s == null ? '' : s)
+  .replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const pad = n => String(n).padStart(3, '0');
 
-let total = 1, folder = '', timer = null, barMax = 0, busy = false;
+const LABEL = {
+  waiting: 'Waiting', downloading: 'Downloading', joining: 'Joining picture and sound',
+  converting: 'Making the MP3', done: 'Done', failed: 'Failed', had: 'Already here'
+};
+const CHIP = Object.assign({}, LABEL, {joining: 'Joining', converting: 'Converting'});
+const FORMAT = {mp4: 'MP4', max: 'MP4, best quality', mp3: 'MP3'};
+const size = r => (r.count > 1 ? r.count + ' videos' : 'single video') + ' · ' + (FORMAT[r.format] || '');
+
+let busy = false, timer = null, misses = 0, cd = null;
+let seen = {seq: 0, rev: -1}, items = [], itemsKey = '', lastCurrent = null;
+let runs = [], finishedHtml = '', statusOf = {}, says = {};
+const baseTitle = document.title;
 
 async function api(path, body) {
-  const opt = body ? {method:'POST', body: JSON.stringify(body)} : {};
+  // The header tells the engine this came from its own page.
+  const opt = body
+    ? {method: 'POST', body: JSON.stringify(body), headers: {'X-Playlist-Downloader': '1'}}
+    : {};
   const r = await fetch(path, opt);
   if (!r.ok) throw new Error(await r.text());
   return r.json();
@@ -233,142 +309,313 @@ const store = {
   get(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 };
-const savedFmt = store.get('fmt', 'best');
-const savedDir = store.get('dir', '');
+// Version 1.0 saved "best" or "1080". Both now mean the default, which
+// plays on any PC.
+let savedFmt = store.get('fmt', 'mp4');
+if (savedFmt === 'best' || savedFmt === '1080') savedFmt = 'mp4';
 const fmtInput = document.querySelector('input[name=fmt][value="' + savedFmt + '"]');
 if (fmtInput) fmtInput.checked = true;
-$('folder').value = savedDir;
+$('folder').value = store.get('dir', '');
 
-api('/api/defaults').then(d => {
-  if (d.clipboard) {
-    $('url').value = d.clipboard;
-    $('link-hint').textContent = 'Link taken from your clipboard. Press Download, or paste another.';
-  }
-}).catch(() => {});
+const isYouTube = s => /^https?:\/\/([\w-]+\.)?(youtube\.com|youtu\.be)\/\S+$/i.test(s);
 
-// Paste anywhere and it goes, no clicking into the box first.
+// Several links pasted together are queued, each into its own folder.
+function linksIn(text) {
+  const all = (text || '').trim().split(/\s+/).filter(Boolean);
+  const urls = all.filter(s => /^https?:\/\//i.test(s));
+  return urls.length ? urls : all.slice(0, 1);
+}
+
+// Paste anywhere and it goes, no clicking into the box first. Not into
+// the folder box, though: that is a path, not a link.
 document.addEventListener('paste', e => {
-  if ($('s-link').hidden) return;
+  if (e.target === $('folder')) return;
   const text = ((e.clipboardData || window.clipboardData).getData('text') || '').trim();
-  if (!text) return;
+  if (!text || (e.target !== $('url') && !/^https?:\/\//i.test(text))) return;
   e.preventDefault();
   $('url').value = text;
-  start();
+  start(text);
 });
 
-$('go').onclick = start;
-$('url').onkeydown = e => { if (e.key === 'Enter') start(); };
+$('go').onclick = () => start($('url').value);
+$('url').onkeydown = e => { if (e.key === 'Enter') start($('url').value); };
 
-async function start() {
-  const url = $('url').value.trim();
-  if (!url || busy) return;
+async function start(text) {
+  const list = linksIn(text);
+  if (!list.length || busy) return;
   busy = true;
-  barMax = 0;
+  stopCountdown();
+  document.title = baseTitle;
   $('link-err').hidden = true;
   $('go').disabled = true;
+  $('link-hint').textContent = list.length > 1 ? 'Reading ' + list.length + ' links...' : 'Reading the link...';
 
   const format = document.querySelector('input[name=fmt]:checked').value;
-  const wanted = $('folder').value.trim();
+  const folder = $('folder').value.trim();
   store.set('fmt', format);
-  store.set('dir', wanted);
+  store.set('dir', folder);
 
-  $('run-title').textContent = 'Reading the link...';
-  $('run-count').textContent = '';
-  $('run-where').textContent = '';
-  $('log').innerHTML = '';
-  $('fill').style.width = '0';
-  show('s-run');
-
-  try {
-    const info = await api('/api/info', {url});
-    total  = info.count || 1;
-    folder = wanted || info.suggested;
-    $('run-title').textContent = info.title;
-    $('run-count').textContent = total > 1 ? total + ' videos' : 'single video';
-    $('run-where').textContent = folder;
-
-    await api('/api/start', {url: info.url, folder, format});
-    timer = setInterval(poll, 700);
-  } catch (e) {
-    $('link-err').textContent = String(e.message || e);
-    $('link-err').hidden = false;
-    show('s-link');
+  const errors = [];
+  for (const url of list) {
+    try { await api('/api/start', {url, folder, format}); }
+    catch (e) { errors.push((list.length > 1 ? url + '\n  ' : '') + String(e.message || e)); }
   }
+  if (errors.length) {
+    $('link-err').textContent = errors.join('\n');
+    $('link-err').hidden = false;
+  }
+  if (errors.length < list.length) $('url').value = '';
   busy = false;
   $('go').disabled = false;
+  poll();
 }
 
-// yt-dlp's own words, tidied up. The common ones get a plain reason and
-// something to do about it; anything else is passed through as it came.
-function explain(problem) {
-  if (!problem) return 'Some videos could not be fetched. Running it again retries them.';
-  const raw = problem.replace(/^ERROR:\s*/, '').replace(/^\[[^\]]+\]\s*/, '').replace(/^[\w-]{11}:\s*/, '');
-  // Specific causes first. "This video is unavailable" is also how YouTube
-  // opens a geo-block, so the general case has to come last.
-  // "Sign in to confirm" opens both the bot check and the age check, so this
-  // one has to look for the bot specifically.
-  if (/not a bot/i.test(raw))
-    return 'YouTube asked to confirm you are not a bot. Those videos need a signed-in account.';
-  if (/private video/i.test(raw))                    return 'Some videos are private.';
-  if (/members-only|join this channel/i.test(raw))   return 'Some videos are for channel members only.';
-  if (/not available in your country|geo.?restrict|geo.?block/i.test(raw))
-    return 'Some videos are blocked in your country.';
-  if (/age.?restrict|confirm your age|inappropriate for some users/i.test(raw))
-    return 'Some videos are age-restricted and need a signed-in account.';
-  if (/unavailable|removed|has been deleted|terminated/i.test(raw))
-    return 'Some videos have been taken down.';
-  if (/unable to download|timed out|connection|network is unreachable/i.test(raw))
-    return 'The connection dropped. Running it again picks up where it stopped.';
-  return raw;
+// A link from the clipboard at launch waits five seconds with a Cancel
+// button, in case it was copied long ago and is not wanted now.
+function countdown(url) {
+  $('url').value = url;
+  let left = 5, what = 'the link you copied';
+  const draw = () => $('cd-text').textContent = 'Starting ' + what + ' in ' + left + '...';
+  $('countdown').hidden = false;
+  draw();
+  api('/api/info', {url}).then(i => {
+    what = '"' + i.title + '"' + (i.isPlaylist ? ' (' + i.count + ' videos)' : '');
+    draw();
+  }).catch(e => {
+    stopCountdown();
+    $('link-err').textContent = String(e.message || e);
+    $('link-err').hidden = false;
+  });
+  cd = setInterval(() => {
+    if (--left > 0) return draw();
+    stopCountdown();
+    start(url);
+  }, 1000);
+}
+function stopCountdown() { clearInterval(cd); cd = null; $('countdown').hidden = true; }
+$('cd-cancel').onclick = () => { stopCountdown(); $('url').value = ''; $('url').focus(); };
+
+function timeLeft(s) {
+  if (s < 60) return 'under a minute left';
+  const m = Math.round(s / 60);
+  if (m < 60) return 'about ' + m + ' min left';
+  return 'about ' + Math.floor(m / 60) + ' h ' + (m % 60) + ' min left';
 }
 
-function poll() {
-  api('/api/progress').then(p => {
-    const done = p.done.length;
-    document.querySelector('.now').textContent = p.title || 'Working...';
-    $('pct').textContent = p.percent || '';
-    $('speed').textContent = p.speed || '';
-    $('eta').textContent = p.eta && p.eta !== 'NA' ? 'ETA ' + p.eta : '';
+async function poll() {
+  clearTimeout(timer);
+  try {
+    render(await api('/api/progress?seq=' + seen.seq + '&rev=' + seen.rev));
+    misses = 0;
+    $('s-gone').hidden = true;
+  } catch (e) {
+    // A few misses in a row means the black window was closed.
+    if (++misses >= 3) $('s-gone').hidden = false;
+  }
+  timer = setTimeout(poll, 800);
+}
 
-    // An MP4 is video then audio, each counting 0-100, so the raw figure
-    // drops back mid-video. Only ever let the bar move forwards.
-    const item = parseFloat(p.percent) || 0;
-    barMax = Math.max(barMax, Math.min(100, ((done + item/100) / total) * 100));
-    $('fill').style.width = barMax + '%';
+function render(p) {
+  $('versions').textContent = 'Playlist Downloader ' + p.app + (p.ytdlp ? ' · yt-dlp ' + p.ytdlp : '');
+  runs = p.runs || [];
+  const focus = runs.find(r => r.seq === p.focus);
+  if (focus && focus.items) {
+    items = focus.items;
+    seen = {seq: focus.seq, rev: focus.rev};
+  }
+  const active = runs.find(r => r.seq === p.active);
+  $('s-run').hidden = !active;
+  $('link-hint').textContent = busy ? $('link-hint').textContent
+    : active ? 'Paste another link and it joins the queue.'
+    : 'Paste a link anywhere on this page and it starts downloading.';
+  if (active) drawRun(active, p.queue || []);
+  drawFinished(runs.filter(r => r.seq !== p.active && r.status !== 'queued'));
 
-    if (done !== $('log').childElementCount) {
-      $('log').innerHTML = p.done.map(t =>
-        '<div>' + t.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) + '</div>'
-      ).join('');
-      $('log').scrollTop = $('log').scrollHeight;
+  for (const r of runs) {
+    const was = statusOf[r.seq];
+    if ((was === 'running' || was === 'waiting') && r.status === 'finished') finished(r);
+    statusOf[r.seq] = r.status;
+  }
+}
+
+function drawRun(r, queue) {
+  $('run-title').textContent = r.title;
+  $('run-count').textContent = size(r);
+  const overall = [];
+  if (r.count > 1) overall.push('Video ' + r.position + ' of ' + r.count);
+  overall.push(Math.floor(r.percent) + '%');
+  if (r.eta != null) overall.push(timeLeft(r.eta));
+  $('overall').textContent = overall.join(' · ');
+  $('fill').style.width = r.percent + '%';
+
+  const c = r.current;
+  if (r.status === 'waiting') {
+    $('now-state').textContent = 'Trying again';
+    $('now-title').textContent = r.failed + ' that did not come through, in ' + r.retryIn + 's';
+  } else if (r.status === 'stopping') {
+    $('now-state').textContent = 'Stopping';
+    $('now-title').textContent = '';
+  } else {
+    $('now-state').textContent = c ? LABEL[c.state] || '' : 'Starting';
+    $('now-title').textContent = c ? (c.title || 'Video ' + c.index) : '';
+  }
+  $('pct').textContent = c && c.state === 'downloading' ? c.percent : '';
+  $('speed').textContent = c && c.state === 'downloading' ? c.speed : '';
+  $('eta').textContent = c && c.state === 'downloading' && c.eta && c.eta !== 'NA' && c.eta !== 'Unknown' ? 'ETA ' + c.eta : '';
+  $('run-where').textContent = r.folder;
+
+  const notes = [];
+  if (r.notice) notes.push(r.notice);
+  if (r.split) notes.push(r.split + ' video' + (r.split > 1 ? 's' : '') +
+    ' from an older version came out in two halves. You can repair them once this finishes.');
+  $('run-notice').textContent = notes.join(' ');
+  $('run-notice').hidden = !notes.length;
+
+  $('items').hidden = r.count < 2;
+  if (seen.seq === r.seq) drawItems(c);
+
+  $('queue').textContent = queue.length ? 'Up next: ' + queue.join(', ') : '';
+  $('queue').hidden = !queue.length;
+  $('run-open').dataset.folder = r.folder;
+}
+
+function drawItems(current) {
+  const key = seen.seq + ':' + seen.rev;
+  if (key !== itemsKey) {
+    itemsKey = key;
+    $('items').innerHTML = items.map(it =>
+      '<div class="it s-' + it.s + '"><span class="n">' + pad(it.i) + '</span>' +
+      '<span class="t">' + esc(it.t || 'Video ' + it.i) + '</span>' +
+      '<span class="chip">' + (CHIP[it.s] || '') + '</span></div>').join('');
+  }
+  // Keep the video in progress in view, but only scroll when it changes,
+  // so the list can still be scrolled by hand.
+  const now = current ? seen.seq + ':' + current.index : null;
+  if (now && now !== lastCurrent) {
+    lastCurrent = now;
+    const box = $('items');
+    const row = box.querySelector('.s-downloading, .s-joining, .s-converting');
+    if (row) box.scrollTop = row.offsetTop - box.clientHeight / 2;
+  }
+}
+
+function summary(r) {
+  const had = r.had ? ' ' + r.had + ' already there.' : '';
+  if (r.status === 'stopped') return 'Stopped. Anything finished is saved.';
+  if (r.done === 0 && r.failed === 0) return 'Nothing new. These are already in that folder.';
+  if (r.done === 0) return 'Nothing downloaded.' + had;
+  if (r.failed) return r.done + ' downloaded, ' + r.failed + ' failed.' + had;
+  return 'All done. ' + r.done + (r.done > 1 ? ' files.' : ' file.') + had;
+}
+
+function drawFinished(list) {
+  const html = list.map(r => {
+    const fails = r.failures.length
+      ? '<div class="fails"><b>Failed (' + r.failures.length + ')</b>' + r.failures.map(f =>
+          '<div>' + (r.count > 1 ? pad(f.index) + ' - ' : '') + esc(f.title || 'Video ' + f.index) +
+          '<span class="why">' + esc(f.reason) + '</span></div>').join('') + '</div>'
+      : '';
+    const fix = r.suggestFix
+      ? '<p class="say">YouTube blocked several of these. That usually means the downloader engine is behind ' +
+        'a change on YouTube\'s side. The fix switches it to its newest test build and tries them again.</p>'
+      : '';
+    const split = r.split
+      ? '<p class="say">' + r.split + ' video' + (r.split > 1 ? 's' : '') + ' in this folder came out in two ' +
+        'halves under an older version. Repair joins them into one file each.</p>'
+      : '';
+    const say = says[r.seq] ? '<p class="say">' + esc(says[r.seq]) + '</p>' : '';
+    const again = r.status === 'stopped' ? 'Carry on' : 'Retry failed videos';
+    return '<section class="card">' +
+      '<div class="found"><b>' + esc(r.title) + '</b><span>' + size(r) + '</span></div>' +
+      '<b class="msg">' + esc(summary(r)) + '</b>' +
+      '<p class="hint">' + esc(r.folder) + '</p>' + fails + fix + split + say +
+      '<div class="end">' +
+        '<button data-act="open" data-seq="' + r.seq + '">Open folder</button>' +
+        (r.suggestFix ? '<button data-act="fix" data-seq="' + r.seq + '">Fix: update the downloader engine</button>' : '') +
+        (r.failed || r.status === 'stopped'
+          ? '<button class="quiet" data-act="retry" data-seq="' + r.seq + '">' + again + '</button>' : '') +
+        (r.split ? '<button class="quiet" data-act="repair" data-seq="' + r.seq + '">Repair split videos</button>' : '') +
+      '</div></section>';
+  }).join('');
+  if (html !== finishedHtml) {
+    finishedHtml = html;
+    $('finished').innerHTML = html;
+  }
+}
+
+$('finished').onclick = async e => {
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const seq = +b.dataset.seq, act = b.dataset.act;
+  const r = runs.find(x => x.seq === seq);
+  b.disabled = true;
+  delete says[seq];
+  try {
+    if (act === 'open') await api('/api/open', {folder: r.folder});
+    if (act === 'retry') await api('/api/retry', {seq});
+    if (act === 'fix') {
+      b.textContent = 'Updating, this takes a minute...';
+      const x = await api('/api/fix', {seq});
+      says[seq] = 'Updated to yt-dlp ' + x.ytdlp + '. Trying the blocked videos again.';
     }
-
-    if (p.finished) {
-      clearInterval(timer);
-      const failed = total - done;
-      $('done-msg').textContent =
-        done === 0 && p.exitCode === 0 ? 'Nothing new. These are already in that folder.'
-        : done === 0                   ? 'Nothing downloaded.'
-        : failed > 0                   ? done + ' of ' + total + ' downloaded, ' + failed + ' skipped.'
-        :                                'All done. ' + done + (done > 1 ? ' files.' : ' file.');
-      $('done-where').textContent = folder;
-      $('done-why').textContent = failed > 0 ? explain(p.problem) : '';
-      $('done-why').hidden = failed === 0;
-      show('s-done');
+    if (act === 'repair') {
+      b.textContent = 'Repairing...';
+      const x = await api('/api/repair', {seq});
+      says[seq] = 'Joined ' + x.joined + '.' + (x.failed
+        ? ' ' + x.failed + ' could not be joined. Retry downloads ' + (x.failed > 1 ? 'them' : 'it') + ' whole.' : '');
     }
-  }).catch(() => {});
-}
-
-$('stop').onclick = async () => {
-  clearInterval(timer);
-  await api('/api/stop', {});
-  $('done-msg').textContent = 'Stopped. Anything finished is saved.';
-  $('done-where').textContent = folder;
-  show('s-done');
+  } catch (err) {
+    says[seq] = String(err.message || err);
+  }
+  finishedHtml = '';
+  poll();
 };
 
-$('open').onclick = () => api('/api/open', {folder});
-$('again').onclick = () => { show('s-link'); $('url').value = ''; $('url').focus(); };
+$('stop').onclick = async () => {
+  $('stop').disabled = true;
+  try { await api('/api/stop', {}); } catch (e) {}
+  $('stop').disabled = false;
+  poll();
+};
+$('run-open').onclick = () => api('/api/open', {folder: $('run-open').dataset.folder}).catch(() => {});
+
+// Done: say so in the tab title, which stays until the next download, and
+// with a short chime. The engine also shows a Windows notification.
+function finished(r) {
+  document.title = '✓ Done (' + r.done + ')';
+  try {
+    const a = new (window.AudioContext || window.webkitAudioContext)();
+    const o = a.createOscillator(), g = a.createGain();
+    o.frequency.value = 880;
+    g.gain.setValueAtTime(0.0001, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.15, a.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + 0.6);
+    o.connect(g).connect(a.destination);
+    o.start();
+    o.stop(a.currentTime + 0.6);
+  } catch (e) {}
+}
+
+// The bookmarklet sends the page you are on here. It navigates the whole
+// tab rather than fetching, since Chrome asks permission before a website
+// may fetch from your own machine.
+$('bm').href = "javascript:location.href='http://localhost:" + (location.port || 80) +
+  "/?url='+encodeURIComponent(location.href)";
+$('bm').onclick = e => e.preventDefault();
+
+// A link handed over by the launcher, the bookmarklet or a second
+// double-click arrives as ?url=. Cleared straight away so a refresh does
+// not start it again. Only YouTube links start by themselves.
+const query = new URLSearchParams(location.search);
+const incoming = (query.get('url') || '').trim();
+if (incoming) history.replaceState(null, '', location.pathname);
+poll().then(() => {
+  if (!incoming) return;
+  if (!isYouTube(incoming)) { $('url').value = incoming; return; }
+  if (query.get('from') === 'clipboard') countdown(incoming);
+  else start(incoming);
+});
 </script>
 </body>
 </html>
+<!-- PLAYLIST-DOWNLOADER-UI -->
