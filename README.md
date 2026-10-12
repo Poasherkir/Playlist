@@ -13,57 +13,87 @@ About page: **https://playlist-downloader-eight.vercel.app**
    [the site](https://playlist-downloader-eight.vercel.app), or from
    [the latest release](https://github.com/Poasherkir/Playlist/releases/latest),
    or clone this repo.
-2. **Double-click `Download Playlist.bat`.** A black window opens, and the
-   downloader opens in your browser.
-3. **Paste the playlist link. It starts downloading.**
+2. **Copy the playlist link** from your browser's address bar.
+3. **Double-click `Download Playlist.bat`.** A black window opens, the
+   downloader opens in your browser, and after a five-second countdown it
+   starts on the link you copied.
 
 That's the whole thing. The first run needs a few extra minutes to fetch its
 tools; after that it goes straight to the page.
 
 The file works on its own, so the one from the site is all you need. Run it and
-it pulls down the rest beside itself. Next to a cloned repo it just runs what is
-already there.
+it pulls down the rest beside itself, and at every start it checks for a newer
+version of the rest, so fixes reach you without downloading it again. Next to a
+cloned repo it just runs what is already there and never overwrites it.
 
 ## Using it
 
-Paste anywhere on the page and it begins. You don't have to click into the box
-first, and there is nothing to confirm. If the link was already on your
-clipboard when the page opened, it's filled in and you can press Download.
+Copy a link before you start it and the downloader picks it up by itself. The
+countdown has a Cancel button, in case that link was copied long ago.
+
+Or paste anywhere on the page and it begins. You don't have to click into the
+box first, and there is nothing to confirm. Paste several links at once, or
+another while one is running, and they queue up, each in its own folder.
 
 Format and folder sit on that same screen, and both are remembered for next
-time. Three formats: video at best quality, video capped at 1080p for smaller
-files, or music only as MP3. Leave the folder empty and each playlist gets its
-own folder in Downloads, named after the playlist.
+time. Three formats:
 
-While it runs you get a progress bar, the current video's name, speed and time
-left, and a list ticking off as each one finishes. **Open folder** at the end
-takes you straight there.
+- **Video** (the default): MP4 in H.264 with AAC sound, up to 1080p. It plays on
+  any Windows 10 or 11 PC as it is, in Films & TV, Media Player, VLC or a TV.
+- **Video, best quality**: up to 4K. Above 1080p YouTube only offers VP9 and AV1,
+  and Windows 10 needs Microsoft's free AV1 Video Extension from the Store to
+  play AV1.
+- **Music**: MP3 with the thumbnail as cover art and proper track titles.
+
+Leave the folder empty and each playlist gets its own folder in Downloads,
+named after the playlist.
+
+While it runs you get "Video 7 of 42", how far through the whole playlist it
+is, roughly how long is left, and a list of every video marked waiting,
+downloading, joining, done, failed or already there. When a playlist is done
+Windows shows a notification and the tab title says so. **Open folder** takes
+you straight there.
 
 **The black window is the downloader.** Closing it stops everything. The page is
 only the controls, so you can close and reopen the tab freely, or return to the
-address printed in that window.
+address printed in that window. Double-click the file again while it is
+running and the link goes to the window already open instead of starting a
+second one.
+
+**A shortcut from YouTube.** At the foot of the page is a **Download playlist**
+link. Drag it to your browser's bookmarks bar. On any YouTube page, with the
+black window open, click it and that page's playlist starts downloading.
 
 ## Good to know
 
 - **You can stop it any time.** Press Stop, or close the black window. Come back
-  later, pick the same folder, and it carries on where it left off. Finished
-  videos are recorded in `already-downloaded.txt` in that folder, which is how it
-  knows what to skip. Delete that file to download everything again.
-- Videos that fail (deleted, private, region-locked) are skipped rather than
-  stopping the run, and retried next time.
+  later, pick the same folder, and it carries on where it left off; a video cut
+  off halfway resumes from where it stopped.
+- **Finished videos are only counted once they have been checked.** Each one is
+  opened with ffprobe, and only a file with both picture and sound (or, for an
+  MP3, sound) is written to `already-downloaded.mp4.txt` or
+  `already-downloaded.mp3.txt` in that folder. That is how it knows what to
+  skip. Video and music keep separate lists, so you can download a playlist as
+  both into one folder. Delete a list to download everything again. The single
+  `already-downloaded.txt` from version 1.0 is still read for video.
+- **Failures are explained, one by one.** A private, removed, region-locked or
+  age-restricted video is skipped rather than stopping the run, and listed at
+  the end with the reason. Anything that might work a second time (a dropped
+  connection, YouTube refusing a request) is tried once more after a short
+  pause, and **Retry failed videos** tries again whenever you like.
 - Every video arrives as one MP4 with picture and sound together. YouTube
   sends the two separately, so they are fetched and joined in a hidden
   `.incomplete` folder, and only the finished file is put in yours. Anything
   cut short waits in there to be resumed.
 - Files are numbered `001 - Title.mp4` so they keep playlist order.
-- MP3s carry the thumbnail as cover art and proper track titles.
 - A `watch?v=...&list=...` link downloads the whole playlist, not just the one
   video you were watching.
 - Nothing is installed. The tools live in a `bin` folder next to the script
   (about 150 MB), nothing touches your PATH or registry, and deleting that
-  folder removes every trace.
+  folder removes every trace. yt-dlp, which does the downloading, updates
+  itself at every start.
 - The page is served only to your own machine, on localhost. Nobody else can
-  reach it.
+  reach it, and other websites cannot start or stop anything through it.
 
 ## If something goes wrong
 
@@ -80,26 +110,40 @@ two streams to everyone, IDM included. IDM joins them behind the scenes, and
 so does this.
 
 **Older downloads came out as two files, picture in one and sound in the
-other.** Earlier versions did that when ffmpeg failed to start. Delete those
-pieces (names like `001 - Title.f137.mp4` and `001 - Title.f140.m4a`) and
-`already-downloaded.txt`, then run it again on the same folder. Videos that are
-already whole are recognised and skipped, and the rest come down as one file
-each.
+other.** Version 1.0 did that when ffmpeg failed to start, leaving names like
+`001 - Title.f137.mp4` and `001 - Title.f140.m4a`. Run the same playlist into
+that folder again: the page offers **Repair split videos**, which joins each
+pair into one MP4, checks it, and only then deletes the halves. A half that
+cannot be joined is struck off the list of finished videos, so **Retry**
+downloads it whole.
 
 **"ffmpeg will not run".** It is checked at every start, because without it
 picture and sound cannot be joined. This is usually antivirus holding back
 `bin\ffmpeg.exe`. Allow it, delete the `bin` folder and run again.
 
-**Downloads fail or stall.** Nearly always yt-dlp being out of date after a
-change on YouTube's side. It updates itself weekly; to force it now, delete the
-`bin` folder and run again.
+**YouTube blocked the request, or "confirm you're not a bot".** Nearly always
+yt-dlp being behind a change on YouTube's side. It updates itself at every
+start, but if several videos in a playlist are blocked anyway, the page offers
+**Fix: update the downloader engine**. That switches yt-dlp to its nightly build,
+which usually has the fix days before a normal release, and tries the blocked
+videos again. It never does that without you asking.
 
-**"Confirm you're not a bot".** That video wants a signed-in account. No setting
-here gets around it.
+**Age-restricted videos.** These need a signed-in account. If you want them,
+export your YouTube cookies to a file named `cookies.txt` (a browser extension
+such as "Get cookies.txt LOCALLY" does this) and put it next to
+`playlist.ps1`. It is used when present and ignored otherwise. Treat that file
+like a password and delete it when you are done.
 
 **The page doesn't open.** The black window prints the address, normally
 `http://localhost:8730/`. Open it by hand. If that port is busy the script
 moves up until it finds a free one, so the number may differ.
+
+## Updating from 1.0
+
+If you got the file from the site before version 1.1, download
+`Download Playlist.bat` once more and replace the old one. The new one fetches
+fresh copies of the rest at every start, so this is the last time. Clones of
+this repo update with `git pull`.
 
 ## Why the website doesn't do the downloading
 
@@ -120,7 +164,7 @@ interface instead of a console.
 
 | | |
 |---|---|
-| `Download Playlist.bat` | What you double-click. Fetches the rest if it is on its own. |
+| `Download Playlist.bat` | What you double-click. On its own, fetches the rest and keeps it up to date. |
 | `playlist.ps1` | Serves the page and drives yt-dlp. |
 | `ui.html` | The page itself. |
 | `site/` | The public page, deployed to Vercel, plus a copy of the launcher it hands out. |

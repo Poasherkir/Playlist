@@ -72,6 +72,7 @@
     border-bottom: 1px solid var(--line); padding-bottom: 13px; margin-bottom: 15px; }
   .shot .head b { font-weight: 600; }
   .shot .head span { color: var(--dim); font-size: 13px; }
+  .shot .over { color: var(--dim); font-size: 13px; margin-bottom: 8px; }
   .shot .cur { font-weight: 550; font-size: 15px; }
   .shot .bar { height: 8px; background: var(--line); border-radius: 99px; margin: 13px 0 9px; overflow: hidden; }
   .shot .bar i { display: block; height: 100%; width: 62%; background: var(--accent); border-radius: 99px; }
@@ -102,6 +103,19 @@
   ol.steps b { font-weight: 570; }
   ol.steps p { margin: 3px 0 0; color: var(--dim); font-size: 15px; }
   code { background: var(--code); padding: 2px 6px; border-radius: 5px; font-size: 0.9em; }
+  .plain { margin: 0 0 8px; }
+  .dim { color: var(--dim); font-size: 15px; }
+  a.bm {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 5px 13px;
+    border: 1px dashed var(--accent);
+    border-radius: 7px;
+    color: var(--accent);
+    font-weight: 560;
+    text-decoration: none;
+    cursor: grab;
+  }
   .facts { border-top: 1px solid var(--line); }
   .facts dl { margin: 0; }
   .facts dt { font-weight: 570; margin: 22px 0 3px; }
@@ -128,6 +142,7 @@
   <div class="shot" aria-hidden="true">
     <div class="titlebar"><i></i><i></i><i></i></div>
     <div class="head"><b>Lo-fi beats to study to</b><span>34 videos</span></div>
+    <div class="over">Video 8 of 34 &middot; 22% &middot; about 9 min left</div>
     <div class="cur">008 - Rainy Window, Slow Tape</div>
     <div class="bar"><i></i></div>
     <div class="meta"><span>62.4%</span><span>4.11MiB/s</span><span>ETA 00:47</span></div>
@@ -146,14 +161,25 @@
           <code>watch?v=...&amp;list=...</code> link works, and you get the whole playlist,
           not just the one video.</p></li>
       <li><b>Double-click the file you just downloaded</b>
-        <p>The downloader opens in your browser. The first run takes a few
-          minutes while it fetches what it needs; after that it opens straight
-          away.</p></li>
-      <li><b>Paste the link</b>
-        <p>It starts there and then, with nothing to confirm. Watch the
-          progress, then click through to the folder. Stop whenever you like.
-          Next time it picks up where it left off.</p></li>
+        <p>The downloader opens in your browser, finds the link you copied and
+          starts on it after a five-second countdown you can cancel. The first
+          run takes a few minutes while it fetches what it needs; after that it
+          opens straight away.</p></li>
+      <li><b>Watch it go</b>
+        <p>Video 7 of 42, time left, and every video ticked off as it lands.
+          Windows tells you when it is done. Stop whenever you like; next time
+          it picks up where it left off. To download another, paste its link
+          anywhere on the page.</p></li>
     </ol>
+  </section>
+
+  <section>
+    <h2>A shortcut from YouTube</h2>
+    <p class="plain">Drag this to your bookmarks bar:
+      <a class="bm" href="javascript:location.href='http://localhost:8730/?url='+encodeURIComponent(location.href)"
+         onclick="return false">Download playlist</a></p>
+    <p class="plain dim">Then, on any YouTube playlist page, click it while the downloader's
+      black window is open, and that playlist starts downloading.</p>
   </section>
 
   <section class="facts">
@@ -170,9 +196,26 @@
         Nothing touches your PATH or your registry. Delete the folder and it is
         gone without trace.</dd>
 
+      <dt>Videos that play on any PC</dt>
+      <dd>MP4 in H.264 with AAC sound, up to 1080p, which every Windows 10 and 11
+        machine plays as it is. Picture and sound arrive joined in one file, and
+        each one is checked before it counts as done. Up to 4K is one click away
+        if you want it.</dd>
+
       <dt>It picks up where it stopped</dt>
       <dd>Close it mid-playlist, come back tomorrow, choose the same folder, and it
-        skips what you already have. Videos that fail get retried next run.</dd>
+        skips what you already have. A video cut off halfway carries on from
+        where it stopped.</dd>
+
+      <dt>Failures explained, not hidden</dt>
+      <dd>Private, removed or region-locked videos are listed with the reason,
+        and the rest of the playlist carries on. Anything that might work on a
+        second try is tried again, and a Retry button does it whenever you like.</dd>
+
+      <dt>Keeps itself up to date</dt>
+      <dd>YouTube changes often. The downloader updates its engine at every
+        start, and fetches its own fixes too, so the file you downloaded once
+        keeps working.</dd>
 
       <dt>Files stay in order</dt>
       <dd>Named <code>001 - Title.mp4</code> and so on, so your player keeps the
