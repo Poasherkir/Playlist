@@ -1,7 +1,10 @@
 # YouTube Playlist Downloader
 
 Download a whole YouTube playlist as MP4 video, or as MP3s with cover art.
-One file to double-click, nothing to install. Windows 10 and 11.
+One file to double-click, nothing to install, no account, no admin rights.
+
+**[Download it here](https://playlist-downloader-eight.vercel.app/Download%20Playlist.bat)**
+(one small file, for Windows 10 version 1803 or newer, and Windows 11)
 
 ![The downloader running: playlist name, current video, progress bar and speed, with finished videos ticked off](docs/preview.svg)
 
@@ -9,17 +12,24 @@ About page: **https://playlist-downloader-eight.vercel.app**
 
 ## Get started
 
-1. **Get the file.** One button on
-   [the site](https://playlist-downloader-eight.vercel.app), or from
-   [the latest release](https://github.com/Poasherkir/Playlist/releases/latest),
-   or clone this repo.
+1. **Get the file.** The link above, the button on
+   [the site](https://playlist-downloader-eight.vercel.app), or
+   [the latest release](https://github.com/Poasherkir/Playlist/releases/latest).
+   Put it anywhere you like, such as your Desktop.
 2. **Copy the playlist link** from your browser's address bar.
 3. **Double-click `Download Playlist.bat`.** A black window opens, the
    downloader opens in your browser, and after a five-second countdown it
    starts on the link you copied.
 
 That's the whole thing. The first run needs a few extra minutes to fetch its
-tools; after that it goes straight to the page.
+tools; after that it goes straight to the page. Your videos land in your
+Downloads folder, in a folder named after the playlist.
+
+**If your browser or Windows warns you about the file:** it is a small script
+that is not signed, so they are cautious with it. In the browser, choose
+**Keep**. If Windows says "Windows protected your PC", click **More info**,
+then **Run anyway**; if it asks "Do you want to run this file?", click **Run**.
+It is plain text, so you can open it in Notepad first and read every line.
 
 The file works on its own, so the one from the site is all you need. Run it and
 it pulls down the rest beside itself, and at every start it checks for a newer
