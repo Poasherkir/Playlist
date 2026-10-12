@@ -1,3 +1,7 @@
 bin/
 downloads/
 .vercel
+# Personal sign-in cookies, if someone drops them in for age-restricted videos.
+cookies.txt
+# Left by the launcher while it checks a fresh download.
+*.new
