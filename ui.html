@@ -290,8 +290,8 @@ const FORMAT = {mp4: 'MP4', max: 'MP4, best quality', mp3: 'MP3'};
 const size = r => (r.count > 1 ? r.count + ' videos' : 'single video') + ' · ' + (FORMAT[r.format] || '');
 
 let busy = false, timer = null, misses = 0, cd = null;
-let seen = {seq: 0, rev: -1}, items = [], itemsKey = '', lastCurrent = null;
-let runs = [], finishedHtml = '', statusOf = {}, says = {};
+let lastSeen = {seq: 0, rev: -1}, items = [], itemsKey = '', lastCurrent = null;
+let runs = [], finishedHtml = '', statusOf = {}, messages = {};
 const baseTitle = document.title;
 
 async function api(path, body) {
@@ -371,20 +371,20 @@ async function start(text) {
 // clipboard link at launch: 5s countdown with cancel, could be an old link
 function countdown(url) {
   $('url').value = url;
-  let left = 5, what = 'the link you copied';
-  const draw = () => $('cd-text').textContent = 'Starting ' + what + ' in ' + left + '...';
+  let secs = 5, source = 'the link you copied';
+  const updateText = () => $('cd-text').textContent = 'Starting ' + source + ' in ' + secs + '...';
   $('countdown').hidden = false;
-  draw();
+  updateText();
   api('/api/info', {url}).then(i => {
-    what = '"' + i.title + '"' + (i.isPlaylist ? ' (' + i.count + ' videos)' : '');
-    draw();
+    source = '"' + i.title + '"' + (i.isPlaylist ? ' (' + i.count + ' videos)' : '');
+    updateText();
   }).catch(e => {
     stopCountdown();
     $('link-err').textContent = String(e.message || e);
     $('link-err').hidden = false;
   });
   cd = setInterval(() => {
-    if (--left > 0) return draw();
+    if (--secs > 0) return updateText();
     stopCountdown();
     start(url);
   }, 1000);
@@ -402,7 +402,7 @@ function timeLeft(s) {
 async function poll() {
   clearTimeout(timer);
   try {
-    render(await api('/api/progress?seq=' + seen.seq + '&rev=' + seen.rev));
+    render(await api('/api/progress?seq=' + lastSeen.seq + '&rev=' + lastSeen.rev));
     misses = 0;
     $('s-gone').hidden = true;
   } catch (e) {
@@ -418,7 +418,7 @@ function render(p) {
   const focus = runs.find(r => r.seq === p.focus);
   if (focus && focus.items) {
     items = focus.items;
-    seen = {seq: focus.seq, rev: focus.rev};
+    lastSeen = {seq: focus.seq, rev: focus.rev};
   }
   const active = runs.find(r => r.seq === p.active);
   $('s-run').hidden = !active;
@@ -429,8 +429,8 @@ function render(p) {
   drawFinished(runs.filter(r => r.seq !== p.active && r.status !== 'queued'));
 
   for (const r of runs) {
-    const was = statusOf[r.seq];
-    if ((was === 'running' || was === 'waiting') && r.status === 'finished') finished(r);
+    const prevStatus = statusOf[r.seq];
+    if ((prevStatus === 'running' || prevStatus === 'waiting') && r.status === 'finished') finished(r);
     statusOf[r.seq] = r.status;
   }
 }
@@ -469,7 +469,7 @@ function drawRun(r, queue) {
   $('run-notice').hidden = !notes.length;
 
   $('items').hidden = r.count < 2;
-  if (seen.seq === r.seq) drawItems(c);
+  if (lastSeen.seq === r.seq) drawItems(c);
 
   $('queue').textContent = queue.length ? 'Up next: ' + queue.join(', ') : '';
   $('queue').hidden = !queue.length;
@@ -477,7 +477,7 @@ function drawRun(r, queue) {
 }
 
 function drawItems(current) {
-  const key = seen.seq + ':' + seen.rev;
+  const key = lastSeen.seq + ':' + lastSeen.rev;
   if (key !== itemsKey) {
     itemsKey = key;
     $('items').innerHTML = items.map(it =>
@@ -486,7 +486,7 @@ function drawItems(current) {
       '<span class="chip">' + (CHIP[it.s] || '') + '</span></div>').join('');
   }
   // scroll to the current video only when it changes, so manual scrolling works
-  const now = current ? seen.seq + ':' + current.index : null;
+  const now = current ? lastSeen.seq + ':' + current.index : null;
   if (now && now !== lastCurrent) {
     lastCurrent = now;
     const box = $('items');
@@ -496,40 +496,40 @@ function drawItems(current) {
 }
 
 function summary(r) {
-  const had = r.had ? ' ' + r.had + ' already there.' : '';
+  const alreadyNote = r.had ? ' ' + r.had + ' already there.' : '';
   if (r.status === 'stopped') return 'Stopped. Anything finished is saved.';
   if (r.done === 0 && r.failed === 0) return 'Nothing new. These are already in that folder.';
-  if (r.done === 0) return 'Nothing downloaded.' + had;
-  if (r.failed) return r.done + ' downloaded, ' + r.failed + ' failed.' + had;
-  return 'All done. ' + r.done + (r.done > 1 ? ' files.' : ' file.') + had;
+  if (r.done === 0) return 'Nothing downloaded.' + alreadyNote;
+  if (r.failed) return r.done + ' downloaded, ' + r.failed + ' failed.' + alreadyNote;
+  return 'All done. ' + r.done + (r.done > 1 ? ' files.' : ' file.') + alreadyNote;
 }
 
 function drawFinished(list) {
   const html = list.map(r => {
-    const fails = r.failures.length
+    const failsHtml = r.failures.length
       ? '<div class="fails"><b>Failed (' + r.failures.length + ')</b>' + r.failures.map(f =>
           '<div>' + (r.count > 1 ? pad(f.index) + ' - ' : '') + esc(f.title || 'Video ' + f.index) +
           '<span class="why">' + esc(f.reason) + '</span></div>').join('') + '</div>'
       : '';
-    const fix = r.suggestFix
+    const fixHtml = r.suggestFix
       ? '<p class="say">YouTube blocked several of these. That usually means the downloader engine is behind ' +
         'a change on YouTube\'s side. The fix switches it to its newest test build and tries them again.</p>'
       : '';
-    const split = r.split
+    const splitHtml = r.split
       ? '<p class="say">' + r.split + ' video' + (r.split > 1 ? 's' : '') + ' in this folder came out in two ' +
         'halves under an older version. Repair joins them into one file each.</p>'
       : '';
-    const say = says[r.seq] ? '<p class="say">' + esc(says[r.seq]) + '</p>' : '';
-    const again = r.status === 'stopped' ? 'Carry on' : 'Retry failed videos';
+    const msgHtml = messages[r.seq] ? '<p class="say">' + esc(messages[r.seq]) + '</p>' : '';
+    const retryLabel = r.status === 'stopped' ? 'Carry on' : 'Retry failed videos';
     return '<section class="card">' +
       '<div class="found"><b>' + esc(r.title) + '</b><span>' + size(r) + '</span></div>' +
       '<b class="msg">' + esc(summary(r)) + '</b>' +
-      '<p class="hint">' + esc(r.folder) + '</p>' + fails + fix + split + say +
+      '<p class="hint">' + esc(r.folder) + '</p>' + failsHtml + fixHtml + splitHtml + msgHtml +
       '<div class="end">' +
         '<button data-act="open" data-seq="' + r.seq + '">Open folder</button>' +
         (r.suggestFix ? '<button data-act="fix" data-seq="' + r.seq + '">Fix: update the downloader engine</button>' : '') +
         (r.failed || r.status === 'stopped'
-          ? '<button class="quiet" data-act="retry" data-seq="' + r.seq + '">' + again + '</button>' : '') +
+          ? '<button class="quiet" data-act="retry" data-seq="' + r.seq + '">' + retryLabel + '</button>' : '') +
         (r.split ? '<button class="quiet" data-act="repair" data-seq="' + r.seq + '">Repair split videos</button>' : '') +
       '</div></section>';
   }).join('');
@@ -545,23 +545,23 @@ $('finished').onclick = async e => {
   const seq = +b.dataset.seq, act = b.dataset.act;
   const r = runs.find(x => x.seq === seq);
   b.disabled = true;
-  delete says[seq];
+  delete messages[seq];
   try {
     if (act === 'open') await api('/api/open', {folder: r.folder});
     if (act === 'retry') await api('/api/retry', {seq});
     if (act === 'fix') {
       b.textContent = 'Updating, this takes a minute...';
       const x = await api('/api/fix', {seq});
-      says[seq] = 'Updated to yt-dlp ' + x.ytdlp + '. Trying the blocked videos again.';
+      messages[seq] = 'Updated to yt-dlp ' + x.ytdlp + '. Trying the blocked videos again.';
     }
     if (act === 'repair') {
       b.textContent = 'Repairing...';
       const x = await api('/api/repair', {seq});
-      says[seq] = 'Joined ' + x.joined + '.' + (x.failed
+      messages[seq] = 'Joined ' + x.joined + '.' + (x.failed
         ? ' ' + x.failed + ' could not be joined. Retry downloads ' + (x.failed > 1 ? 'them' : 'it') + ' whole.' : '');
     }
   } catch (err) {
-    says[seq] = String(err.message || err);
+    messages[seq] = String(err.message || err);
   }
   finishedHtml = '';
   poll();
@@ -599,14 +599,14 @@ $('bm').onclick = e => e.preventDefault();
 
 // ?url= from the launcher / bookmarklet / a second launch. cleared right away
 // so a refresh doesn't restart it. only youtube links auto-start
-const query = new URLSearchParams(location.search);
-const incoming = (query.get('url') || '').trim();
-if (incoming) history.replaceState(null, '', location.pathname);
+const params = new URLSearchParams(location.search);
+const urlParam = (params.get('url') || '').trim();
+if (urlParam) history.replaceState(null, '', location.pathname);
 poll().then(() => {
-  if (!incoming) return;
-  if (!isYouTube(incoming)) { $('url').value = incoming; return; }
-  if (query.get('from') === 'clipboard') countdown(incoming);
-  else start(incoming);
+  if (!urlParam) return;
+  if (!isYouTube(urlParam)) { $('url').value = urlParam; return; }
+  if (params.get('from') === 'clipboard') countdown(urlParam);
+  else start(urlParam);
 });
 </script>
 </body>
