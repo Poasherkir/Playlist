@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Playlist Downloader</title>
-<meta name="description" content="Download a whole YouTube playlist as MP4 or MP3 on Windows. Free, no install, no ads.">
+<meta name="description" content="Download a whole YouTube playlist as MP4 or MP3 on Windows. Free, nothing to install, no ads.">
 <style>
   :root {
     --bg: #ffffff;
@@ -129,16 +129,16 @@
 
   <header>
     <h1>Download a whole <em>YouTube playlist</em></h1>
-    <p class="lede">Every video as MP4, or the whole thing as MP3s with cover art.
-      One file to double-click. No install, no account, no ads.</p>
+    <p class="lede">Get every video as an MP4, or the whole playlist as MP3s with cover art.
+      Just one file to double-click. Nothing to install, no account, no ads.</p>
     <div class="cta">
       <a class="btn" href="/Download%20Playlist.bat" download>Download for Windows</a>
       <a class="btn ghost" href="https://github.com/Poasherkir/Playlist">View the source</a>
     </div>
-    <p class="note">One small file. Double-click it and the downloader opens in your
-      browser. Windows 10 and 11, free and open source.</p>
-    <p class="note">It is an unsigned script, so your browser may ask you to keep it, and
-      Windows may ask before it first runs: choose Keep, then More info and Run anyway.</p>
+    <p class="note">It's a small .bat file. Double-click it and the downloader opens in your
+      browser. Works on Windows 10 and 11, free and open source.</p>
+    <p class="note">The script isn't signed, so your browser might ask if you want to keep it,
+      and Windows might warn you the first time. Click Keep, then More info and Run anyway.</p>
   </header>
 
   <div class="shot" aria-hidden="true">
@@ -159,19 +159,19 @@
     <h2>How it works</h2>
     <ol class="steps">
       <li><b>Copy the playlist link</b>
-        <p>Straight from your browser's address bar. The usual
-          <code>watch?v=...&amp;list=...</code> link works, and you get the whole playlist,
-          not just the one video.</p></li>
-      <li><b>Double-click the file you just downloaded</b>
+        <p>Right from the address bar. A normal
+          <code>watch?v=...&amp;list=...</code> link is fine too, you get the whole
+          playlist and not just that one video.</p></li>
+      <li><b>Double-click the file you downloaded</b>
         <p>The downloader opens in your browser, finds the link you copied and
-          starts on it after a five-second countdown you can cancel. The first
-          run takes a few minutes while it fetches what it needs; after that it
-          opens straight away.</p></li>
-      <li><b>Watch it go</b>
-        <p>Video 7 of 42, time left, and every video ticked off as it lands.
-          Windows tells you when it is done. Stop whenever you like; next time
-          it picks up where it left off. To download another, paste its link
-          anywhere on the page.</p></li>
+          starts after a 5 second countdown (you can cancel it). The first run
+          takes a few minutes while it downloads what it needs. After that it
+          opens right away.</p></li>
+      <li><b>Let it run</b>
+        <p>You see Video 7 of 42, the time left, and each video gets ticked off
+          when it's done. Windows lets you know when it finishes. Stop whenever
+          you want and it carries on from there next time. To grab another
+          playlist, just paste its link anywhere on the page.</p></li>
     </ol>
   </section>
 
@@ -180,56 +180,55 @@
     <p class="plain">Drag this to your bookmarks bar:
       <a class="bm" href="javascript:location.href='http://localhost:8730/?url='+encodeURIComponent(location.href)"
          onclick="return false">Download playlist</a></p>
-    <p class="plain dim">Then, on any YouTube playlist page, click it while the downloader's
-      black window is open, and that playlist starts downloading.</p>
+    <p class="plain dim">Then on any YouTube playlist page, click it while the black
+      downloader window is open and that playlist starts downloading.</p>
   </section>
 
   <section class="facts">
-    <h2>Worth knowing</h2>
+    <h2>Good to know</h2>
     <dl>
-      <dt>It runs on your computer, not on this site</dt>
-      <dd>YouTube blocks downloads coming from data centres, and a server has
-        neither the disk nor the time for a playlist of videos. Running it on your
-        own machine sidesteps both, and your files never touch anyone else's
+      <dt>It runs on your PC, not on this site</dt>
+      <dd>YouTube blocks downloads from data centres, and a server doesn't have
+        the disk space or the time for a whole playlist anyway. Running it on your
+        own PC avoids both, and your files never go through anyone else's
         computer.</dd>
 
-      <dt>Nothing is installed</dt>
-      <dd>The tools it needs land in a <code>bin</code> folder next to the script.
-        Nothing touches your PATH or your registry. Delete the folder and it is
-        gone without trace.</dd>
+      <dt>Nothing gets installed</dt>
+      <dd>The tools it needs go in a <code>bin</code> folder next to the script.
+        Your PATH and registry aren't touched. Delete the folder and it's
+        completely gone.</dd>
 
-      <dt>Videos that play on any PC</dt>
-      <dd>MP4 in H.264 with AAC sound, up to 1080p, which every Windows 10 and 11
-        machine plays as it is. Picture and sound arrive joined in one file, and
-        each one is checked before it counts as done. Up to 4K is one click away
-        if you want it.</dd>
+      <dt>Videos play on any PC</dt>
+      <dd>H.264 MP4 with AAC audio, up to 1080p, which any Windows 10 or 11 PC
+        plays as is. Picture and sound come as one file, and every file gets
+        checked before it counts as done. If you want 4K, that's one click.</dd>
 
-      <dt>It picks up where it stopped</dt>
-      <dd>Close it mid-playlist, come back tomorrow, choose the same folder, and it
-        skips what you already have. A video cut off halfway carries on from
-        where it stopped.</dd>
+      <dt>Picks up where it stopped</dt>
+      <dd>Close it halfway through, come back tomorrow, pick the same folder and
+        it skips what you already have. Even a half-downloaded video carries on
+        from where it stopped.</dd>
 
-      <dt>Failures explained, not hidden</dt>
-      <dd>Private, removed or region-locked videos are listed with the reason,
-        and the rest of the playlist carries on. Anything that might work on a
-        second try is tried again, and a Retry button does it whenever you like.</dd>
+      <dt>Failures get explained</dt>
+      <dd>Private, removed or region-locked videos are listed with the reason and
+        the rest of the playlist keeps going. Anything that might work on a second
+        try gets retried, and there's a Retry button for later.</dd>
 
-      <dt>Keeps itself up to date</dt>
-      <dd>YouTube changes often. The downloader updates its engine at every
-        start, and fetches its own fixes too, so the file you downloaded once
+      <dt>Updates itself</dt>
+      <dd>YouTube changes things a lot. The downloader updates its engine every
+        time it starts and grabs its own fixes too, so the file you downloaded
         keeps working.</dd>
 
       <dt>Files stay in order</dt>
-      <dd>Named <code>001 - Title.mp4</code> and so on, so your player keeps the
-        playlist order. MP3s carry the thumbnail as cover art and proper titles.</dd>
+      <dd>They're named <code>001 - Title.mp4</code> and so on, so your player keeps
+        the playlist order. MP3s get the thumbnail as cover art and proper titles.</dd>
     </dl>
   </section>
 
   <footer>
-    <p>Free software, built on <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a>
+    <p>Free and open source, built on <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a>
       and <a href="https://ffmpeg.org">ffmpeg</a>.
       <a href="https://github.com/Poasherkir/Playlist">Source on GitHub</a>.</p>
-    <p>Download only what you have the right to download.</p>
+    <p>Please only download stuff you have the right to download.</p>
   </footer>
 
 </div>
