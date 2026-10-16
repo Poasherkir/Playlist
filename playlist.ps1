@@ -6,7 +6,7 @@ param([string]$Url = $env:PD_URL)
 
 $ErrorActionPreference = 'Stop'
 
-$appVersion = '1.1.0'
+$appVersion = '1.1.1'
 
 $bin     = Join-Path $PSScriptRoot 'bin'
 $ytdlp   = Join-Path $bin 'yt-dlp.exe'
