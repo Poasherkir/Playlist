@@ -2,12 +2,10 @@
 title YouTube Playlist Downloader
 setlocal
 
-rem Two ways this file gets used. Next to the rest of the project it just runs
-rem it. On its own, downloaded from the site, it fetches the project first,
-rem and fetches it again at every start so fixes arrive by themselves.
+rem next to playlist.ps1: just run it. standalone: download the latest
+rem playlist.ps1 + ui.html on every start, then run
 
-rem A link given to this file goes on in PD_URL. Passed along on a command
-rem line, cmd would cut a YouTube link short at its first ampersand.
+rem pass the link on in an env var, cmd breaks urls at &
 set "PD_URL=%~1"
 
 if exist "%~dp0playlist.ps1" (
@@ -27,9 +25,8 @@ if not exist "%APP%\playlist.ps1" (
 )
 curl -L --fail -s --connect-timeout 5 --max-time 30 -o "%APP%\playlist.ps1.new" "%BASE%/playlist.ps1" -o "%APP%\ui.html.new" "%BASE%/ui.html"
 
-rem The new pair only replaces the old one if both arrived whole: each must
-rem end with its marker line, and the script must parse. Offline, or with a
-rem download cut short, the copy from last time carries on.
+rem only swap in the new files if both end with their marker and the ps1
+rem parses. otherwise (offline etc) keep last time's copy
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$d = $env:APP; $ps = Join-Path $d 'playlist.ps1.new'; $ui = Join-Path $d 'ui.html.new'; $bad = $null;" ^
   "$ok = (Test-Path $ps) -and (Test-Path $ui) -and (Select-String -LiteralPath $ps -SimpleMatch '# PLAYLIST-DOWNLOADER-ENGINE' -Quiet) -and (Select-String -LiteralPath $ui -SimpleMatch '<!-- PLAYLIST-DOWNLOADER-UI -->' -Quiet);" ^

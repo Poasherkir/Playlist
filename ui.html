@@ -295,7 +295,7 @@ let runs = [], finishedHtml = '', statusOf = {}, says = {};
 const baseTitle = document.title;
 
 async function api(path, body) {
-  // The header tells the engine this came from its own page.
+  // custom header so the engine knows it's us
   const opt = body
     ? {method: 'POST', body: JSON.stringify(body), headers: {'X-Playlist-Downloader': '1'}}
     : {};
@@ -304,13 +304,12 @@ async function api(path, body) {
   return r.json();
 }
 
-// Remember the format and folder between runs.
+// remember format + folder
 const store = {
   get(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 };
-// Version 1.0 saved "best" or "1080". Both now mean the default, which
-// plays on any PC.
+// old 1.0 values -> default
 let savedFmt = store.get('fmt', 'mp4');
 if (savedFmt === 'best' || savedFmt === '1080') savedFmt = 'mp4';
 const fmtInput = document.querySelector('input[name=fmt][value="' + savedFmt + '"]');
@@ -319,15 +318,14 @@ $('folder').value = store.get('dir', '');
 
 const isYouTube = s => /^https?:\/\/([\w-]+\.)?(youtube\.com|youtu\.be)\/\S+$/i.test(s);
 
-// Several links pasted together are queued, each into its own folder.
+// multiple links get queued, each into its own folder
 function linksIn(text) {
   const all = (text || '').trim().split(/\s+/).filter(Boolean);
   const urls = all.filter(s => /^https?:\/\//i.test(s));
   return urls.length ? urls : all.slice(0, 1);
 }
 
-// Paste anywhere and it goes, no clicking into the box first. Not into
-// the folder box, though: that is a path, not a link.
+// paste anywhere to start (except in the folder box)
 document.addEventListener('paste', e => {
   if (e.target === $('folder')) return;
   const text = ((e.clipboardData || window.clipboardData).getData('text') || '').trim();
@@ -370,8 +368,7 @@ async function start(text) {
   poll();
 }
 
-// A link from the clipboard at launch waits five seconds with a Cancel
-// button, in case it was copied long ago and is not wanted now.
+// clipboard link at launch: 5s countdown with cancel, could be an old link
 function countdown(url) {
   $('url').value = url;
   let left = 5, what = 'the link you copied';
@@ -409,7 +406,7 @@ async function poll() {
     misses = 0;
     $('s-gone').hidden = true;
   } catch (e) {
-    // A few misses in a row means the black window was closed.
+    // a few failed polls in a row = console window was closed
     if (++misses >= 3) $('s-gone').hidden = false;
   }
   timer = setTimeout(poll, 800);
@@ -488,8 +485,7 @@ function drawItems(current) {
       '<span class="t">' + esc(it.t || 'Video ' + it.i) + '</span>' +
       '<span class="chip">' + (CHIP[it.s] || '') + '</span></div>').join('');
   }
-  // Keep the video in progress in view, but only scroll when it changes,
-  // so the list can still be scrolled by hand.
+  // scroll to the current video only when it changes, so manual scrolling works
   const now = current ? seen.seq + ':' + current.index : null;
   if (now && now !== lastCurrent) {
     lastCurrent = now;
@@ -579,8 +575,7 @@ $('stop').onclick = async () => {
 };
 $('run-open').onclick = () => api('/api/open', {folder: $('run-open').dataset.folder}).catch(() => {});
 
-// Done: say so in the tab title, which stays until the next download, and
-// with a short chime. The engine also shows a Windows notification.
+// finished: tab title + chime (the engine does the windows notification)
 function finished(r) {
   document.title = '✓ Done (' + r.done + ')';
   try {
@@ -596,16 +591,14 @@ function finished(r) {
   } catch (e) {}
 }
 
-// The bookmarklet sends the page you are on here. It navigates the whole
-// tab rather than fetching, since Chrome asks permission before a website
-// may fetch from your own machine.
+// bookmarklet navigates here instead of fetch(), chrome asks permission
+// before a site can fetch from localhost
 $('bm').href = "javascript:location.href='http://localhost:" + (location.port || 80) +
   "/?url='+encodeURIComponent(location.href)";
 $('bm').onclick = e => e.preventDefault();
 
-// A link handed over by the launcher, the bookmarklet or a second
-// double-click arrives as ?url=. Cleared straight away so a refresh does
-// not start it again. Only YouTube links start by themselves.
+// ?url= from the launcher / bookmarklet / a second launch. cleared right away
+// so a refresh doesn't restart it. only youtube links auto-start
 const query = new URLSearchParams(location.search);
 const incoming = (query.get('url') || '').trim();
 if (incoming) history.replaceState(null, '', location.pathname);

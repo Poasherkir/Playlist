@@ -1,9 +1,7 @@
-# Serves the page in ui.html on localhost and runs yt-dlp behind it.
-# On first run it puts the tools it needs in bin\, so nothing is installed
-# system-wide and nothing has to be set up by hand.
+# playlist downloader engine: serves ui.html on localhost and drives yt-dlp.
+# tools (yt-dlp, ffmpeg, deno) get downloaded into bin\ on first run.
 
-# A link can be handed over at launch. The launcher passes it in PD_URL,
-# because on a cmd command line a YouTube link breaks at its first &.
+# link from the launcher comes in via PD_URL (cmd chokes on & in urls)
 param([string]$Url = $env:PD_URL)
 
 $ErrorActionPreference = 'Stop'
@@ -28,13 +26,12 @@ $ffmpegUrls = @(
     'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip'
 )
 
-# yt-dlp will not use a deno older than this for YouTube's challenges.
+# min deno version yt-dlp accepts for the youtube challenges
 $denoMinimum = [version]'2.3.0'
 
 $utf8 = New-Object Text.UTF8Encoding $false
 
-# Into a side file first, so a download cut short never leaves a broken
-# tool behind that the next run takes as installed.
+# download to .part first so a cut-off download never looks installed
 function Fetch($url, $dest) {
     $part = "$dest.part"
     & curl.exe -L --fail --progress-bar -o $part $url
@@ -61,9 +58,8 @@ function Install-FromZip($urls, $wanted, $label) {
     Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# Start-Process takes one command line, not a list, so anything holding a
-# space (the output template, most folder paths) has to be quoted by hand.
-# Backslashes only need doubling where a quote follows them.
+# Start-Process wants one command line string, so quote args by hand
+# (backslashes only get doubled when a quote follows them)
 function Format-CommandLine($list) {
     ($list | ForEach-Object {
         if ($_ -eq '' -or $_ -match '[\s"]') {
@@ -72,9 +68,8 @@ function Format-CommandLine($list) {
     }) -join ' '
 }
 
-# Runs a tool to the end and hands back what it printed. Used instead of &
-# wherever its error output matters, since piping that through PowerShell
-# 5.1 with $ErrorActionPreference at Stop throws on the first line.
+# run a tool and return its output. use instead of & when stderr matters:
+# PS 5.1 throws on the first stderr line when EAP is Stop
 function Invoke-Tool($exe, $list, $seconds) {
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName  = $exe
@@ -86,8 +81,7 @@ function Invoke-Tool($exe, $list, $seconds) {
     $info.StandardOutputEncoding = [Text.Encoding]::UTF8
     $info.StandardErrorEncoding  = [Text.Encoding]::UTF8
     $proc = [Diagnostics.Process]::Start($info)
-    # Both at once, or a tool that fills one pipe while we wait on the
-    # other would hang.
+    # read both streams async, otherwise a full pipe can deadlock
     $out = $proc.StandardOutput.ReadToEndAsync()
     $err = $proc.StandardError.ReadToEndAsync()
     if (-not $proc.WaitForExit($seconds * 1000)) {
@@ -98,8 +92,8 @@ function Invoke-Tool($exe, $list, $seconds) {
     @{ Code = $proc.ExitCode; Out = $out.Result; Err = $err.Result }
 }
 
-# yt-dlp needs a JavaScript engine to unscramble the download links YouTube
-# hands out. Without one, downloads get throttled or fail outright.
+# yt-dlp needs a js runtime for youtube's signature stuff,
+# without one downloads get throttled or just fail
 function Get-JsRuntime {
     if (Test-Path $deno) { return @('--js-runtimes', "deno:$bin") }
     foreach ($runtime in 'deno', 'node', 'bun') {
@@ -108,10 +102,8 @@ function Get-JsRuntime {
     return @()
 }
 
-# YouTube sends picture and sound as two streams, and yt-dlp joins them
-# with ffmpeg. If ffmpeg will not start, yt-dlp does not stop: it hands
-# back the two halves as separate files and marks the video as done. So
-# check that ffmpeg actually runs, not just that the file is there.
+# yt-dlp doesn't fail when ffmpeg won't start - it leaves video and audio
+# as separate files and marks them done. so actually run ffmpeg to check
 function Test-Ffmpeg {
     foreach ($exe in $ffmpeg, $ffprobe) {
         if (-not (Test-Path $exe)) { return $false }
@@ -131,8 +123,7 @@ function Test-Deno {
 function Install-Tools {
     $haveYtdlp = Test-Path $ytdlp
     $ffmpegOk  = Test-Ffmpeg
-    # A deno in bin\ too old to solve YouTube's challenges is replaced.
-    # Without one there, any JavaScript runtime already on the PC will do.
+    # replace an outdated deno in bin\, otherwise any js runtime on PATH works
     $needsJs   = -not (Test-Deno) -and ((Test-Path $deno) -or (Get-JsRuntime).Count -eq 0)
     if ($haveYtdlp -and $ffmpegOk -and -not $needsJs) { return }
 
@@ -166,14 +157,13 @@ function Install-Tools {
     Write-Host ''
 }
 
-# YouTube changes things often, and an out-of-date yt-dlp is the usual
-# reason downloads start failing, so look for a new one at every start.
-# Offline the check fails quickly and the copy already here is used.
+# old yt-dlp = broken downloads, so update on every start.
+# offline it fails fast and we keep the current one
 function Update-Ytdlp {
     Write-Host '  Checking for a yt-dlp update'
     $said = ''
     try { $said = (Invoke-Tool $ytdlp @('-U') 30).Out } catch { }
-    # Stopped halfway, the updater can leave the old copy renamed aside.
+    # an interrupted update can leave the old exe renamed
     if (-not (Test-Path $ytdlp) -and (Test-Path "$ytdlp.old")) { Move-Item "$ytdlp.old" $ytdlp -Force }
     if ($said -match 'Updated yt-dlp to \D*(\d[\d.]+)') { Write-Host "  Updated yt-dlp to $($Matches[1])" }
     Get-YtdlpVersion
@@ -194,8 +184,7 @@ function Get-SafeName($name) {
     if ($out) { $out } else { 'Playlist' }
 }
 
-# The real Downloads folder, which may have been moved off C: or into
-# OneDrive, rather than assuming it sits in the user profile.
+# real Downloads path (can be moved, or on OneDrive)
 function Get-Downloads {
     try {
         $found = (New-Object -ComObject Shell.Application).NameSpace('shell:Downloads').Self.Path
@@ -204,9 +193,8 @@ function Get-Downloads {
     Join-Path $env:USERPROFILE 'Downloads'
 }
 
-# yt-dlp is still writing its logs while they are read, so open them
-# shared and carry on from where the last read stopped. Only whole lines
-# are taken; a line still being written waits for the next read.
+# yt-dlp is still writing these, so open shared and keep an offset.
+# only complete lines are returned
 function Read-NewLines($log, $all) {
     if (-not (Test-Path $log.Path)) { return @() }
     try {
@@ -254,10 +242,8 @@ function Test-YouTubeLink($text) {
     $text -match '^https?://([\w-]+\.)?(youtube\.com|youtu\.be)/\S+$'
 }
 
-# A YouTube link already copied when the downloader starts is used straight
-# away, so copy-then-double-click is the whole job. The clipboard is read
-# this once and never again. The page counts down with a Cancel button
-# first, in case the link was copied long ago.
+# youtube link already on the clipboard at startup gets used (read once).
+# page shows a countdown with cancel in case it's an old link
 function Get-StartLink {
     if ($Url) {
         if (Test-YouTubeLink $Url.Trim()) { return @{ Url = $Url.Trim(); FromClipboard = $false } }
@@ -279,9 +265,8 @@ function Open-Page($port, $link) {
     Start-Process $address
 }
 
-# Looks for this downloader already running from an earlier double-click.
-# Only ports something is listening on are asked, since on Windows a
-# connection to a closed localhost port takes seconds to be refused.
+# find an instance that's already running. only try ports that are listening,
+# a closed localhost port on windows takes seconds to refuse
 function Find-RunningCopy {
     $open = @([Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners() |
         ForEach-Object { $_.Port })
@@ -297,8 +282,7 @@ function Find-RunningCopy {
             $response.Close()
             if (($said | ConvertFrom-Json).app -eq 'playlist-downloader') { return $port }
         } catch {
-            # Busy for a moment (reading a long playlist, say) means it is
-            # ours: anything else on these ports answers at once.
+            # slow to answer = probably us, busy reading a playlist
             if ($_.Exception.InnerException.Status -eq 'Timeout') { return $port }
         }
     }
@@ -306,22 +290,18 @@ function Find-RunningCopy {
 }
 
 function Get-CommonArgs {
-    # yt-dlp writes in the local code page when its output goes to a pipe
-    # or a file, and quietly drops whatever does not fit. An Arabic or
-    # Japanese title came back blank, which could also make a playlist
-    # pass for a single video.
+    # force utf-8, otherwise yt-dlp writes in the ANSI code page and drops chars
+    # (arabic titles came back empty)
     $list = @(Get-JsRuntime) + @('--encoding', 'utf-8')
-    # Optional, for age-restricted videos: a cookies.txt exported from a
-    # signed-in browser. Cookies are never read from a browser directly.
+    # optional cookies.txt exported from a browser, for age-restricted videos
     if (Test-Path $cookies) { $list += @('--cookies', $cookies) }
     $list
 }
 
-# yt-dlp's own words, turned into something a person can act on. Kind
-# decides what happens next: 'gone' is never retried, 'blocked' counts
-# towards offering the Fix button. Specific causes come first, because
-# "This video is unavailable" also opens a geo-block, and "Sign in to
-# confirm" opens both the bot check and the age check.
+# map yt-dlp errors to readable reasons. 'gone' = never retry,
+# 'blocked' counts toward showing the Fix button.
+# order matters: geo-blocks also say 'unavailable', and 'Sign in to confirm'
+# is used for both the bot check and the age check
 function Get-Reason($raw) {
     $text = $raw -replace '^ERROR:\s*', '' -replace '^\[[^\]]+\]\s*', '' -replace '^[\w-]{11}:\s*', ''
     if ($text -match 'not a bot|HTTP Error 403|HTTP Error 429') {
@@ -367,9 +347,8 @@ function Get-LinkProblem($said) {
     'That link did not work. Make sure it is a public YouTube video or playlist.'
 }
 
-# One quick pass over the link: the playlist's name and each entry's
-# index, id and title, checked before any folder is made. JSON escapes
-# everything outside ASCII, so titles in any script survive the trip.
+# quick flat pass: playlist name + index/id/title of each entry.
+# json is ascii-escaped so non-latin titles survive
 function Get-LinkInfo($link) {
     if ($pd.Infos.ContainsKey($link)) { return $pd.Infos[$link] }
     $list = @(Get-CommonArgs) + @('--flat-playlist', '--ignore-errors', '--no-warnings',
@@ -392,7 +371,7 @@ function Get-LinkInfo($link) {
             Index = if ($e.playlist_index) { [int]$e.playlist_index } else { $n }
             Id    = $e.id
             Title = $e.title
-            # The same "site id" form yt-dlp uses in a download archive.
+            # same 'site id' format as yt-dlp's archive file
             Key   = "$($site.ToLower()) $($e.id)"
         })
     }
@@ -406,9 +385,8 @@ function Get-LinkInfo($link) {
     $info
 }
 
-# One playlist the user asked for. Each video in it is an item that goes
-# from waiting through downloading and joining to done, failed, or 'had'
-# (already in the folder from an earlier run).
+# a run = one playlist. items go waiting -> downloading -> joining ->
+# done / failed / had (already downloaded earlier)
 function New-Run($info, $folder, $format) {
     $pd.Seq += 1
     $run = @{
@@ -433,7 +411,7 @@ function Add-Item($run, $index, $id, $title, $key) {
 function Find-Item($run, $index, $id, $site) {
     if ($index -match '^\d+$' -and $run.ByIndex.ContainsKey([int]$index)) { return $run.ByIndex[[int]$index] }
     if ($run.ById.ContainsKey($id)) { return $run.ById[$id] }
-    # Added to the playlist since it was first read.
+    # new entry, added after we first read the playlist
     $next = if ($index -match '^\d+$') { [int]$index } else { $run.Items.Count + 1 }
     Add-Item $run $next $id $null "$("$site".ToLower()) $id"
 }
@@ -455,8 +433,7 @@ function Set-Failed($run, $item, $reason) {
     $run.Rev += 1
 }
 
-# The video being worked on stopped without finishing. The reason is the
-# last error nobody claimed, if there was one.
+# current video stopped without finishing, use the last unclaimed error
 function Close-Current($run) {
     $item = $run.Current
     if (Test-Busy $item) {
@@ -468,9 +445,8 @@ function Close-Current($run) {
     $run.Current = $null
 }
 
-# yt-dlp reports a video as done even when it could not join the two
-# streams, so look inside every finished file before counting it.
-# Returns why the file is no good, or nothing when it is fine.
+# yt-dlp says done even when the merge failed, so ffprobe every file.
+# returns what's wrong, or nothing if it's fine
 function Test-MediaFile($file, $format) {
     if (-not (Test-Path -LiteralPath $file)) { return 'The finished file went missing.' }
     $broken = if ($format -eq 'mp3') { 'The MP3 came out damaged.' } else { 'Joining picture and sound failed.' }
@@ -490,8 +466,7 @@ function Test-MediaFile($file, $format) {
     }
 }
 
-# A separate list per format, so an MP3 run never blocks an MP4 run of the
-# same playlist in the same folder, or the other way round.
+# separate done list per format so mp3 and mp4 runs don't block each other
 function Get-DoneFile($folder, $format) {
     $kind = if ($format -eq 'mp3') { 'mp3' } else { 'mp4' }
     Join-Path $folder "already-downloaded.$kind.txt"
@@ -500,8 +475,7 @@ function Get-DoneFile($folder, $format) {
 function Get-DoneKeys($folder, $format) {
     $keys  = New-Object 'Collections.Generic.HashSet[string]'
     $files = @(Get-DoneFile $folder $format)
-    # Version 1.0 kept one list. It is still read for video, which is what
-    # nearly everyone used it for, but no longer written.
+    # 1.0 had a single list - still read for video, never written
     if ($format -ne 'mp3') { $files += Join-Path $folder 'already-downloaded.txt' }
     foreach ($file in $files) {
         if (-not (Test-Path -LiteralPath $file)) { continue }
@@ -520,8 +494,7 @@ function Remove-DoneKey($folder, $key) {
     }
 }
 
-# Without ffmpeg, yt-dlp moves the two unjoined halves into the folder as
-# well, named after the video with ".f137" or similar before the extension.
+# without ffmpeg yt-dlp also moves the unmerged .f137/.f140 parts here
 function Remove-Pieces($file) {
     $base = [IO.Path]::GetFileNameWithoutExtension($file)
     $dir  = Split-Path -Parent $file
@@ -535,17 +508,16 @@ function Remove-Pieces($file) {
 function Confirm-Item($run, $item, $file) {
     $problem = Test-MediaFile $file $run.Format
     if ($problem) {
-        # Out of the user's folder, so a broken file never passes for a
-        # finished one. The retry fetches it again.
+        # delete it so it can't pass as finished, the retry downloads it again
         Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
         if (Remove-Pieces $file) { $problem = 'Joining picture and sound failed.' }
         Set-Failed $run $item @{ Kind = 'join'; Text = $problem }
         return
     }
-    # An error that got pinned on this video belonged to the next one.
+    # that error was actually for the next video
     if ($item.State -eq 'failed') { $run.Orphan = @{ Kind = $item.Kind; Text = $item.Reason } }
     $item.Kind = ''; $item.Reason = ''
-    # Halves left by an older version are spare now the whole file is here.
+    # leftover halves from an old version, not needed anymore
     Remove-Pieces $file | Out-Null
     Set-State $run $item 'done'
     if ([object]::ReferenceEquals($run.Current, $item)) { $run.Current = $null }
@@ -564,7 +536,7 @@ function Step-Out($run, $line) {
         }
         return
     }
-    # Split on the first four bars only. Plenty of titles contain one.
+    # max 5 parts, titles can contain |
     $p = $line.Split([string[]]@('|'), 5, [StringSplitOptions]::None)
     if ($p.Count -lt 5) { return }
     $item = Find-Item $run $p[1] $p[2] $p[3]
@@ -596,14 +568,14 @@ function Step-Err($run, $line) {
     } elseif (Test-Busy $run.Current) {
         Set-Failed $run $run.Current $reason
     } else {
-        # Most likely the video that has only just started, whose start
-        # line has not been read yet. It is claimed when that video stops.
+        # probably a video that just started and whose line we haven't seen yet,
+        # it gets claimed when it stops
         $run.Orphan = $reason
     }
 }
 
-# stderr first: an error there that names no video belongs to the one in
-# progress, and reading stdout first could already have moved on from it.
+# read stderr first: an error with no video id belongs to the current one,
+# and reading stdout first could move past it
 function Read-Progress($run, $all) {
     foreach ($line in @(Read-NewLines $pd.Err $all)) { Step-Err $run $line }
     foreach ($line in @(Read-NewLines $pd.Out $all)) { Step-Out $run $line }
@@ -629,10 +601,9 @@ function Get-SpaceNotice($folder) {
     ''
 }
 
-# Versions before 1.1 could leave a video in two halves when ffmpeg did
-# not run: picture in "001 - Title.f137.mp4", sound in "001 - Title.f140.m4a"
-# (or "f140-1", "f251-drc"). The pattern wants ".f" and at least two
-# digits, so a title such as "my.favourite.mp4" is never taken for one.
+# pre-1.1 could leave split files when ffmpeg failed:
+#   001 - Title.f137.mp4 + 001 - Title.f140.m4a (also f140-1, f251-drc)
+# needs .f + 2 digits so names like my.favourite.mp4 don't match
 $splitPattern = '\.f\d{2,}(-\w+)?\.(mp4|m4a|webm)$'
 
 function Get-SplitGroups($folder) {
@@ -641,9 +612,8 @@ function Get-SplitGroups($folder) {
         Group-Object { $_.Name -replace $splitPattern, '' })
 }
 
-# Joins each pair of halves into one MP4 and checks it before deleting the
-# halves. A video that cannot be joined is struck off the done list, so the
-# next run downloads it whole.
+# merge split pairs into one mp4, verify, then delete the parts.
+# if the merge fails drop it from the done list so it gets downloaded again
 function Repair-Folder($run) {
     $joined = 0; $failed = 0
     $work = Join-Path $run.Folder '.incomplete'
@@ -682,18 +652,15 @@ function Repair-Folder($run) {
     @{ joined = $joined; failed = $failed }
 }
 
-# One go of yt-dlp over a run: the whole playlist the first time, or only
-# the listed items when retrying.
+# start yt-dlp for a run (whole playlist, or just the given items on retry)
 function Start-Pass($run, $only) {
     $pd.Active = $run
     $folder = $run.Folder
     $unfinished = Join-Path $folder '.incomplete'
     try {
         New-Item -ItemType Directory -Force -Path $folder | Out-Null
-        # The two streams are fetched and joined in a hidden folder, and
-        # only the finished video is moved out into the user's. A video
-        # cut short waits in there to be resumed next time instead of
-        # lying around as a picture-only file.
+        # download + merge in a hidden temp folder, only the final file gets moved
+        # out. partial downloads stay in there and resume next time
         $dir = New-Item -ItemType Directory -Force -Path $unfinished
         try { $dir.Attributes = $dir.Attributes -bor [IO.FileAttributes]::Hidden } catch { }
     } catch {
@@ -705,9 +672,8 @@ function Start-Pass($run, $only) {
     $run.Notice = Get-SpaceNotice $folder
     $run.Split  = @(Get-SplitGroups $folder).Count
 
-    # yt-dlp is given a copy of the done list to skip by, and what it
-    # writes there is thrown away. Only this script adds to the real list,
-    # and only after looking inside the file.
+    # yt-dlp gets a throwaway copy of the done list. we only add to the
+    # real one after checking the file
     $keys = Get-DoneKeys $folder $run.Format
     [IO.File]::WriteAllLines($archive, [string[]]@($keys), $utf8)
     if ($only) {
@@ -732,10 +698,9 @@ function Start-Pass($run, $only) {
                         '--extract-audio', '--audio-format', 'mp3', '--audio-quality', '0',
                         '--embed-thumbnail', '--embed-metadata')
         }
-        # Sorted rather than filtered, so there is always a fallback.
-        # H.264 with AAC plays on any Windows PC as it is. Left alone,
-        # yt-dlp prefers AV1, which Windows 10 cannot play without an
-        # add-on from the Store. YouTube only offers H.264 up to 1080p.
+        # -S (sort) instead of -f so there's always a fallback.
+        # prefer h264+aac, plays everywhere. av1 (yt-dlp's default pick) needs a
+        # store extension on win10. youtube only has h264 up to 1080p
         'max' {
             $format = @('-S', 'res,vcodec:h264,acodec:m4a', '--merge-output-format', 'mp4',
                         '--embed-metadata', '--embed-chapters')
@@ -758,7 +723,7 @@ function Start-Pass($run, $only) {
         '--concurrent-fragments', '4',
         '--retries', '10',
         '--fragment-retries', '10',
-        # Each failed attempt waits twice as long as the last, up to 20s.
+        # exponential backoff, max 20s
         '--retry-sleep', 'exp=1:20',
         '--retry-sleep', 'fragment:exp=1:20',
         '--ignore-errors',
@@ -769,14 +734,11 @@ function Start-Pass($run, $only) {
         '--progress-delta', '1',
         '--progress-template', 'download:DL|%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s',
         '--progress-template', 'postprocess:PP|%(progress.postprocessor)s|%(progress.status)s|%(info.id)s',
-        # The title gets a line of its own because the progress line
-        # ignores --encoding, and any letter the Windows code page lacks
-        # would vanish from it.
+        # title on its own line: the progress template ignores --encoding
         '--print', 'before_dl:NOW|%(playlist_index)s|%(id)s|%(extractor_key)s|%(title)s',
         '--print', 'after_move:DONE|%(playlist_index)s|%(id)s|%(extractor_key)s|%(filepath)s'
     )
-    # A link copied off a playlist page names a video as well as the
-    # playlist. Without this, yt-dlp takes that one video.
+    # watch?v=..&list=.. links: get the whole playlist, not just that video
     if ($run.Url -match '[?&]list=') { $options += '--yes-playlist' }
     if ($only -and $run.IsPlaylist) {
         $options += @('--playlist-items', (($targets | ForEach-Object { $_.Index }) -join ','))
@@ -791,8 +753,7 @@ function Start-Pass($run, $only) {
         -ArgumentList (Format-CommandLine (@(Get-CommonArgs) + $options + $format + @('--', $run.Url))) `
         -NoNewWindow -PassThru `
         -RedirectStandardOutput $outLog -RedirectStandardError $errLog
-    # Touching Handle makes .NET hold on to it, otherwise ExitCode reads
-    # back as null once yt-dlp finishes.
+    # touch Handle or ExitCode comes back null after exit (.NET quirk)
     $null = $pd.Job.Handle
     if (-not $run.Started) { $run.Started = Get-Date }
     $run.Status = 'running'
@@ -802,7 +763,7 @@ function Start-Pass($run, $only) {
 
 function Complete-Pass($run) {
     if ($run.Status -eq 'stopping') {
-        # Whatever was cut off waits to be resumed next time.
+        # partial files stay for next time
         if ($run.Current) { Set-State $run $run.Current 'waiting' }
         Complete-Run $run 'stopped'
         return
@@ -816,8 +777,7 @@ function Complete-Pass($run) {
     }
     $run.Orphan = $null
 
-    # One more go, after a pause, for anything that might work on a
-    # second attempt. Private and removed videos are not worth it.
+    # one more retry after a pause (skip private/removed)
     $again = @($run.Target | Where-Object { $_.State -eq 'failed' -and $_.Kind -ne 'gone' -and $_.Tries -lt 2 })
     if ($again.Count) {
         $run.Status  = 'waiting'
@@ -851,8 +811,7 @@ function Complete-Run($run, $status) {
     if ($status -eq 'finished') { Show-Finished $run.Title $summary }
 }
 
-# A notification when a playlist is done, so nobody has to keep checking
-# the tab. Windows 10 and 11 show a tray balloon as an ordinary toast.
+# windows notification when a playlist is done (the tray balloon shows as a toast on 10/11)
 function Show-Finished($title, $text) {
     try {
         Add-Type -AssemblyName System.Windows.Forms, System.Drawing
@@ -868,8 +827,7 @@ function Show-Finished($title, $text) {
     } catch { }
 }
 
-# Called twice a second whether or not the page is open: reads what
-# yt-dlp has reported, checks finished files, and starts whatever is next.
+# runs every 500ms even with the page closed: read logs, check files, start next
 function Update-Engine {
     $run = $pd.Active
     if ($run) {
@@ -892,7 +850,7 @@ function Update-Engine {
     if ($pd.Tray -and $pd.Tray.Visible -and (Get-Date) -gt $pd.TrayUntil) { $pd.Tray.Visible = $false }
 }
 
-# Runs the failed (and, after a Stop, the unstarted) videos of a run again.
+# retry failed videos (and unstarted ones after a Stop)
 function Request-Retry($run) {
     $only = @($run.Items | Where-Object { $_.State -eq 'failed' -or $_.State -eq 'waiting' })
     if ($only.Count -eq 0) { return }
@@ -909,8 +867,7 @@ function Stop-All {
     if (-not $run) { return }
     if ($pd.Job -and -not $pd.Job.HasExited) {
         $run.Status = 'stopping'
-        # /T takes ffmpeg down too if it is halfway through joining a
-        # video, so nothing is left holding files open.
+        # /T kills ffmpeg too if it's mid-merge
         & taskkill.exe /PID $pd.Job.Id /T /F | Out-Null
     } elseif (-not $pd.Job) {
         Complete-Run $run 'stopped'
@@ -918,8 +875,7 @@ function Stop-All {
 }
 
 function Get-RunView($run, $withItems) {
-    # One plain loop: this runs on every poll, and a pipeline over a long
-    # playlist is slow enough in PowerShell 5.1 to notice.
+    # plain loop on purpose, pipelines are slow in 5.1 and this runs every poll
     $done = 0; $failed = 0; $had = 0; $blocked = 0
     $failures = New-Object Collections.ArrayList
     foreach ($item in $run.Items) {
@@ -944,8 +900,7 @@ function Get-RunView($run, $withItems) {
         }
     }
     $finished = $done + $failed + $had
-    # Time left, from the average so far. Videos already in the folder
-    # take no time, so they stay out of the average.
+    # eta from the average time per video (skip already-downloaded ones)
     $eta = $null
     if ($run.Status -eq 'running' -and $run.Started -and ($done + $failed) -gt 0) {
         $each = ((Get-Date) - $run.Started).TotalSeconds / ($done + $failed + $fraction)
@@ -959,8 +914,7 @@ function Get-RunView($run, $withItems) {
         percent = if ($total) { [Math]::Round(100 * ($finished + $fraction) / $total, 1) } else { 0 }
         eta = $eta; current = $current; notice = $run.Notice; split = $run.Split
         retryIn = if ($run.Status -eq 'waiting') { [Math]::Max(0, [int]($run.RetryAt - (Get-Date)).TotalSeconds) } else { 0 }
-        # Several videos blocked at once usually means yt-dlp is behind a
-        # change on YouTube's side, which its nightly build may already fix.
+        # lots of blocked videos usually means yt-dlp needs the nightly fix
         suggestFix = ($run.Status -eq 'finished' -or $run.Status -eq 'stopped') -and
                      $blocked -gt 0 -and $blocked -ge [Math]::Min(3, $total - $had)
         failures = $failures.ToArray()
@@ -999,8 +953,7 @@ try {
 
     $pdLink = Get-StartLink
 
-    # Started again while already running: hand the link to the copy that
-    # is running, rather than starting a second one beside it.
+    # already running? hand the link to that instance instead
     $pdRunning = Find-RunningCopy
     if ($pdRunning) {
         Open-Page $pdRunning $pdLink
@@ -1035,8 +988,7 @@ try {
 
     $pdNext = $listener.BeginGetContext($null, $null)
     while ($listener.IsListening) {
-        # Wakes every half second even when nobody asks, so downloads are
-        # checked and the next one started with the page closed.
+        # wake up every 500ms even without requests so downloads keep going
         if (-not $pdNext.AsyncWaitHandle.WaitOne(500)) {
             try { Update-Engine } catch { Write-Host "  $($_.Exception.Message)" -ForegroundColor Yellow }
             continue
@@ -1045,9 +997,7 @@ try {
         $pdNext  = $listener.BeginGetContext($null, $null)
         $path    = $context.Request.Url.AbsolutePath
 
-        # The page sends this header with everything it asks for. Another
-        # website can make the browser post a plain form here, but not one
-        # with its own header, so it cannot start or stop anything.
+        # require our custom header on POSTs. other sites can't set it (csrf)
         if ($context.Request.HttpMethod -eq 'POST' -and -not $context.Request.Headers['X-Playlist-Downloader']) {
             $context.Response.StatusCode = 403
             Send-Reply $context 'Forbidden' 'text/plain'
@@ -1058,8 +1008,7 @@ try {
             switch ($path) {
 
                 '/' {
-                    # -Encoding matters: without it PowerShell 5.1 reads the
-                    # file as ANSI and the page arrives with mangled symbols.
+                    # needs -Encoding UTF8 or 5.1 reads it as ANSI
                     Send-Reply $context (Get-Content $page -Raw -Encoding UTF8) 'text/html; charset=utf-8'
                 }
 
@@ -1079,8 +1028,7 @@ try {
                     $pdUrl  = ([string]$pdBody.url).Trim()
                     if ($pdUrl -notmatch '^https?://\S+$') { Send-Error $context 'That is not a link. Copy it from the address bar and paste it here.'; break }
                     $pdInfo = Get-LinkInfo $pdUrl
-                    # Version 1.0 called the formats "best" and "1080". Both
-                    # land on the new default, which plays everywhere.
+                    # old 1.0 format names -> new default
                     $pdFormat = switch ([string]$pdBody.format) { 'mp3' { 'mp3' } 'max' { 'max' } default { 'mp4' } }
                     $pdFolder = [string]$pdBody.folder
                     if (-not $pdFolder.Trim()) { $pdFolder = Join-Path (Get-Downloads) (Get-SafeName $pdInfo.Title) }
@@ -1100,12 +1048,10 @@ try {
                     $pdRev = [int]$context.Request.QueryString['rev']
                     $pdFocus = if ($pd.Active) { $pd.Active } elseif ($pd.Runs.Count) { $pd.Runs[$pd.Runs.Count - 1] } else { $null }
                     $pdViews = @()
-                    # Newest first, and only the last few, so a long session
-                    # does not slow the page down.
+                    # newest first, only the last few
                     for ($pdI = $pd.Runs.Count - 1; $pdI -ge [Math]::Max(0, $pd.Runs.Count - 10); $pdI--) {
                         $pdR = $pd.Runs[$pdI]
-                        # The full list of videos only goes out when it has
-                        # changed since the page last saw it.
+                        # only send the full list when it changed
                         $pdWith = [object]::ReferenceEquals($pdR, $pdFocus) -and ($pdR.Seq -ne $pdSeq -or $pdR.Rev -ne $pdRev)
                         $pdViews += , (Get-RunView $pdR $pdWith)
                     }
@@ -1136,8 +1082,7 @@ try {
                 '/api/fix' {
                     $pdRun = Find-Run (Get-Body $context).seq
                     if ($pd.Active) { Send-Error $context 'Wait for the current download to finish, then try this.'; break }
-                    # Only on request, never on its own: nightly builds carry
-                    # YouTube fixes days before a stable release does.
+                    # only when asked. nightly gets youtube fixes before stable
                     Write-Host '  Switching yt-dlp to its nightly build'
                     $pdSaid = Invoke-Tool $ytdlp @('--update-to', 'nightly') 180
                     if (-not (Test-Path $ytdlp) -and (Test-Path "$ytdlp.old")) { Move-Item "$ytdlp.old" $ytdlp -Force }
@@ -1181,6 +1126,5 @@ finally {
     if ($pd.Tray) { $pd.Tray.Dispose() }
 }
 
-# The launcher only swaps in a freshly downloaded copy of this file if it
-# ends with the line below, so a download cut short is never used.
+# launcher only accepts a downloaded copy ending with this line, keep it last
 # PLAYLIST-DOWNLOADER-ENGINE
